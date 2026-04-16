@@ -1,0 +1,104 @@
+# ----------------------------
+# Entornos y dependencias locales
+# ----------------------------
+venv_tfg/
+venv/
+.venv/
+ENV/
+env/
+
+# ----------------------------
+# Configuracion local / secretos
+# ----------------------------
+.env
+.env.*
+!.env.example
+*.secret
+*.key
+*.pem
+
+# ----------------------------
+# Editores / sistema operativo
+# ----------------------------
+.cursor/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ----------------------------
+# Python cache y build
+# ----------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+dist/
+build/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# ----------------------------
+# Logs y resultados (generados)
+# ----------------------------
+*.log
+*.jsonl
+*.json
+logs/
+**/logs/
+resultados/
+**/resultados/
+results/
+**/results/
+outputs/
+**/outputs/
+runs/
+**/runs/
+checkpoints/
+**/checkpoints/
+artifacts/
+**/artifacts/
+tmp/
+temp/
+
+# ----------------------------
+# Datos y archivos pesados
+# ----------------------------
+dataset_cartas/
+*.csv
+*.tsv
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.sqlite
+*.sqlite3
+*.db
+*.npy
+*.npz
+*.pkl
+*.joblib
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.bin
+
+# ----------------------------
+# Comprimidos
+# ----------------------------
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
