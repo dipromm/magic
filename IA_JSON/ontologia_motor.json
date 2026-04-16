@@ -1,0 +1,123 @@
+{
+  "Ability": [
+    "Activated_ability",
+    "Static_ability",
+    "Tap",
+    "Triggered_ability"
+  ],
+  "CardAtribute": [
+    "Color",
+    "ConvertedManaCost",
+    "ManaCost",
+    "Power",
+    "Toughness",
+    "CardType",
+    "Nonland"
+  ],
+  "CardSupertype": [
+    "Basic",
+    "Legendary"
+  ],
+  "CardType": [
+    "Artifact",
+    "Creature",
+    "Enchantment",
+    "Instant",
+    "Land",
+    "Planeswalker",
+    "Sorcery"
+  ],
+  "Counters": [
+    "+-X_+-Y",
+    "Charge",
+    "Defense",
+    "Finality",
+    "Lore",
+    "Loyalty",
+    "MinusOne_MinusOne",
+    "Oil",
+    "PlusOne_PlusOne",
+    "Poison",
+    "Stun",
+    "Time"
+  ],
+  "Effect": [
+    "Add_counter",
+    "Deal_damage",
+    "Destroy",
+    "Discard",
+    "Draw_card",
+    "Exile",
+    "Lose_life",
+    "Put_creature_from_hand",
+    "Put_onto_battlefield_tapped",
+    "Reveal",
+    "Search_library",
+    "Shuffle"
+  ],
+  "GameEntity": [
+    "Manapool",
+    "Player"
+  ],
+  "KeywordAbility": [
+    "Defender",
+    "DoubleStrike",
+    "Enchant",
+    "Equip",
+    "FirstStrike",
+    "Flash",
+    "Flying",
+    "Haste",
+    "Hexproof",
+    "Indestructible",
+    "Lifelink",
+    "Menace",
+    "Protection",
+    "Reach",
+    "Trample",
+    "Vigilance",
+    "Ward",
+    "May"
+  ],
+  "PhaseandStep": [
+    "Beggining_phase",
+    "Cleanup",
+    "Combat_damage",
+    "Combat_phase",
+    "Declare_attackers",
+    "Declare_blockers",
+    "Draw",
+    "End_step",
+    "Ending_phase",
+    "Main_phase",
+    "Untap",
+    "Upkeep"
+  ],
+  "TargetType": [
+    "Target_any",
+    "Target_card_hand",
+    "Target_creature",
+    "Target_creature_card_hand",
+    "Target_permanent",
+    "Target_player",
+    "Target_self",
+    "Target_self_player",
+    "Target_spell",
+    "Target_card_library"
+  ],
+  "Trigger_event": [
+    "Cast",
+    "Dies",
+    "Enter_the_battlefield",
+    "Upkeep_begin"
+  ],
+  "Zones": [
+    "Battlefield",
+    "Command_zone",
+    "Exile",
+    "Graveyard",
+    "Hand",
+    "Library",
+    "Stack"
+  ]
+}

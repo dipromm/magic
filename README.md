@@ -67,6 +67,9 @@ pip install torch tianshou pettingzoo gymnasium numpy requests matplotlib tensor
 
 # 5) (Opcional) para visualizar grafo de red neuronal
 pip install torchviz graphviz
+
+# 6) Dependencias del módulo de traducción (Oracle Text -> JSON-LD)
+pip install litellm rdflib
 ```
 
 Nota: si usas GPU CUDA, instala `torch` siguiendo la matriz oficial de PyTorch para tu version de CUDA.
