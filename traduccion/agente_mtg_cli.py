@@ -55,7 +55,7 @@ if not _API_KEY:
 
 _MODEL: str = os.environ.get("LITELLM_MODEL", "openai/gpt-oss-120b")
 _API_BASE: str = os.environ.get("POLIGPT_API_BASE", "https://api.poligpt.upv.es/")
-_MAX_TOKENS: int = int(os.environ.get("LITELLM_MAX_TOKENS", "4096"))
+_MAX_TOKENS: int = int(os.environ.get("LITELLM_MAX_TOKENS", "8192"))
 _TEMPERATURE: float = float(os.environ.get("LITELLM_TEMPERATURE", "0.15"))
 
 os.environ.setdefault("OPENAI_API_KEY", _API_KEY)
@@ -74,99 +74,574 @@ _JSON_PATH = str(_REPO_ROOT / "IA_JSON" / "ontologia_motor.json")
 
 
 def build_system_prompt(ontologia_json: str) -> str:
-    return (
-        "Eres un Juez de Nivel 3 de Magic: The Gathering y un traductor de reglas\n"
-        "a lógica de programación. Tu tarea es recibir el \"Oracle Text\" de una carta\n"
-        "y devolver **exclusivamente** un JSON-LD válido que represente su semántica\n"
-        "mecánica, mapeando TODO a las constantes de la ontología cerrada que se\n"
-        "proporciona a continuación.\n\n"
+    """Genera el system prompt V1.2 con ontología, esquema, reglas y ejemplos."""
+
+    # ------------------------------------------------------------------
+    # Sección 1: Rol y objetivo
+    # ------------------------------------------------------------------
+    sec_rol = (
+        "Eres un traductor experto de Oracle Text de Magic: The Gathering a "
+        "JSON-LD estructurado para un motor de simulación.\n"
+        "Tu salida alimenta un sistema de BLOQUES DE CONSTRUCCIÓN reutilizables. "
+        "El motor ejecuta combinando bloques atómicos (efectos, costes, triggers, "
+        "restricciones), NO programando carta a carta. Si inventas constantes "
+        "compuestas o monolíticas (ej. DestroyAndGainLife, Target_Creature_Hand, "
+        "COUNT_LANDS_CONTROLLED), el motor NO las reconocerá y la traducción será "
+        "INÚTIL.\n"
+        "Devuelve SOLO un JSON válido. Sin bloques de código markdown (```), "
+        "sin texto antes ni después."
+    )
+
+    # ------------------------------------------------------------------
+    # Sección 2: Ontología inyectada
+    # ------------------------------------------------------------------
+    sec_ontologia = (
         "=== ONTOLOGÍA PERMITIDA ===\n"
         f"{ontologia_json}\n"
-        "=== FIN ONTOLOGÍA ===\n\n"
-        "REGLAS DE SALIDA:\n"
-        "1. Devuelve UN ÚNICO JSON válido, sin bloques de código markdown (```),\n"
-        "   sin texto adicional antes ni después.\n"
-        "2. Estructura obligatoria:\n"
-        "   {\n"
-        '     "@context": "https://mtg-engine.example.org/schema/v1",\n'
-        '     "@type": "Card",\n'
-        '     "name": "<nombre de la carta en inglés>",\n'
-        '     "mana_cost": "<coste de maná tal como aparece>",\n'
-        '     "types": ["<supertipo>", "<tipo>", "<subtipo si aplica>"],\n'
-        '     "requires_human_review": false,\n'
-        '     "resolution_blocks": [\n'
-        "       {\n"
-        '         "block_order": 1,\n'
-        '         "trigger": "<TRIGGER de la ontología o NONE>",\n'
-        '         "effect_type": "<EFECTO de la ontología>",\n'
-        '         "target_info": {\n'
-        '           "requires_target": true/false,\n'
-        '           "target_type": "<TARGET de la ontología>",\n'
-        '           "target_count": <entero>\n'
-        "         },\n"
-        '         "trigger_condition": {"event_condition_type": "<condición opcional>", "value": "<valor>"},\n'
-        '         "activation_cost": [{"cost_type": "<tipo_coste>", "amount": "<valor>"}],\n'
-        '         "state_conditions": [\n'
-        "           {\n"
-        '             "condition_type": "COMPARISON",\n'
-        '             "left_operand": "<constante_de_la_ontología (ej. ConvertedManaCost, Power)>",\n'
-        '             "left_scope": "<TARGET | SOURCE | CONTROLLER | OPPONENT>",\n'
-        '             "operator": "<EQUALS | GREATER_THAN | LESS_THAN | GREATER_OR_EQUAL | LESS_OR_EQUAL | NOT_EQUAL>",\n'
-        '             "right_operand": "<constante_de_la_ontología o valor numérico>",\n'
-        '             "right_scope": "<TARGET | SOURCE | CONTROLLER | OPPONENT | null si es número>"\n'
-        "           }\n"
-        "         ],\n"
-        '         "parameters": { <valores numéricos o descriptivos relevantes> }\n'
-        "       }\n"
-        "     ]\n"
-        "   }\n"
-        "3. Si la carta tiene varias habilidades o efectos, crea un\n"
-        "   `resolution_block` por cada uno, numerados por `block_order`.\n"
-        "4. REGLA DE CUARENTENA: si falta CUALQUIER bloque semántico necesario para modelar la carta\n"
-        "   (efecto, target, trigger, condición de trigger, coste de activación, condición de estado,\n"
-        "   restricción de fase/zona, tipo de contador, etc.) que no exista en la ontología:\n"
-        '   - Pon "requires_human_review": true.\n'
-        '   - Deja "resolution_blocks": [].\n'
-        '   - Devuelve "ontology_proposal" como LISTA con una entrada por cada bloque faltante.\n'
-        "   - Cada entrada debe usar esta estructura:\n"
-        "     {\n"
-        '       "keyword": "<término detectado>",\n'
-        '       "category": "<categoría OWL objetivo: Effect, Trigger_event, TargetType, KeywordAbility, Counters, Zones, PhaseandStep, Ability, etc.>",\n'
-        '       "block_kind": "<effect_type|target_type|trigger_event|trigger_condition|activation_cost|state_condition|zone_restriction|phase_restriction|counter_type|other>",\n'
-        '       "proposed_constant": "<NOMBRE_CONSTANTE_SUGERIDO>",\n'
-        '       "description": "<descripción técnica GENÉRICA en español, independiente de la carta concreta; define el concepto y su semántica de reglas para implementar en Python>"\n'
-        "     }\n"
-        "5. La descripción debe ser reusable para cualquier carta y NO mencionar cartas concretas.\n"
-        "6. No inventes constantes que no estén en la ontología para resolution_blocks.\n"
-        "7. REGLA DE POLIMORFISMO: Tienes estrictamente PROHIBIDO inventar constantes combinadas\n"
-        "   o monolíticas para condiciones complejas (ej. NO uses 'ManaValueEqualsChargeCounters').\n"
-        "   Si una carta requiere una comparación o condición matemática dinámica, usa\n"
-        "   obligatoriamente el tipo 'COMPARISON' con los campos:\n"
-        "   - left_operand / right_operand: deben ser constantes QUE EXISTAN en la ontología\n"
-        "     (de categorías como CardAtribute, Counters, etc.) o valores numéricos.\n"
-        "   - left_scope / right_scope: indica a QUÉ objeto se aplica (TARGET, SOURCE,\n"
-        "     CONTROLLER, OPPONENT). Usa null si el operando es un número.\n"
-        "   - operator: EQUALS, GREATER_THAN, LESS_THAN, GREATER_OR_EQUAL, LESS_OR_EQUAL, NOT_EQUAL.\n"
-        "   Ejemplo: 'mana value equal to the number of charge counters' se modela como:\n"
-        "     left_operand=ConvertedManaCost, left_scope=TARGET,\n"
-        "     operator=EQUALS,\n"
-        "     right_operand=Charge, right_scope=SOURCE.\n"
-        "8. VALORES RESERVADOS (NO necesitan estar en la ontología): NONE, true, false,\n"
-        "   COMPARISON, EQUALS, GREATER_THAN, LESS_THAN, GREATER_OR_EQUAL, LESS_OR_EQUAL,\n"
-        "   NOT_EQUAL, TARGET, SOURCE, CONTROLLER, OPPONENT, y cualquier número entero.\n"
-        "   Usa NONE cuando un campo opcional no aplica (ej. trigger=NONE para instantes).\n"
-        "9. REGLA DE VALIDACIÓN TOTAL: TODAS las demás constantes que uses en CUALQUIER campo\n"
-        "   del JSON-LD deben existir en la ontología. Esto incluye:\n"
-        "   - effect_type, trigger (si no es NONE), target_type\n"
-        "   - trigger_condition.event_condition_type\n"
-        "   - activation_cost[].cost_type (ej. Tap está en Ability; Mana_cost requiere estar)\n"
-        "   - left_operand y right_operand de state_conditions (si no son numéricos)\n"
-        "   - cualquier zone, phase, counter_type, keyword, ability_type referenciados\n"
-        "   Si CUALQUIERA de estos valores no existe en la ontología, DEBES activar cuarentena\n"
-        "   (requires_human_review: true) y proponer CADA valor faltante en ontology_proposal.\n"
-        "   No asumas que una constante existe solo porque suena razonable: búscala en la\n"
-        "   ontología y si no aparece, activa cuarentena y propón su adición."
+        "=== FIN ONTOLOGÍA ===\n"
+        "ANTES de usar cualquier constante en tu JSON, BÚSCALA literalmente en "
+        "esta ontología. Si no aparece, activa cuarentena. No asumas que existe "
+        "porque suene razonable."
     )
+
+    # ------------------------------------------------------------------
+    # Sección 3: Esquema V1.2 obligatorio
+    # ------------------------------------------------------------------
+    sec_esquema = (
+        "=== ESQUEMA JSON-LD V1.2 (OBLIGATORIO) ===\n"
+        "{\n"
+        '  "@context": "https://mtg-engine.example.org/schema/v1",\n'
+        '  "@type": "Card",\n'
+        '  "name": "<nombre en inglés>",\n'
+        '  "mana_cost": "<string exacto o null>",\n'
+        '  "supertypes": ["<LEGENDARY | BASIC | SNOW>"],\n'
+        '  "card_types": ["<CREATURE | INSTANT | SORCERY | ARTIFACT | ENCHANTMENT | LAND | PLANESWALKER>"],\n'
+        '  "subtypes": ["<Human | Wizard | Aura | etc>"],\n'
+        '  "base_attributes": {\n'
+        '    "power": "<entero | * | null>",\n'
+        '    "toughness": "<entero | * | null>",\n'
+        '    "loyalty": "<entero | null>",\n'
+        '    "color_indicator": ["<WHITE | BLUE | BLACK | RED | GREEN>"]\n'
+        "  },\n"
+        '  "requires_human_review": false,\n'
+        '  "ontology_proposal": [],\n'
+        '  "abilities": [\n'
+        "    {\n"
+        '      "ability_order": 1,\n'
+        '      "ability_type": "<SPELL | ACTIVATED | TRIGGERED | STATIC>",\n'
+        '      "zones_active": ["<STACK | BATTLEFIELD | HAND | GRAVEYARD | EXILE | COMMAND>"],\n'
+        '      "modal_choices": {"min": "<entero>", "max": "<entero>"} | null,\n'
+        '      "costs": [\n'
+        "        {\n"
+        '          "cost_type": "<MANA | TAP | SACRIFICE | DISCARD | PAY_LIFE | REMOVE_COUNTER>",\n'
+        '          "amount": "<entero | string | null>",\n'
+        '          "restrictions": {\n'
+        '            "logical_operator": "<AND | OR | NONE>",\n'
+        '            "types": ["<CREATURE | ARTIFACT | ...>"],\n'
+        '            "modifiers": ["<OTHER | NONLAND | UNTAPPED | NONTOKEN>"]\n'
+        "          }\n"
+        "        }\n"
+        "      ],\n"
+        '      "trigger": {\n'
+        '        "event_type": "<ENTERS_BATTLEFIELD | DIES | UPKEEP | DRAW_STEP | CAST_SPELL | ATTACKS | BLOCKS | NONE>",\n'
+        '        "conditions": [\n'
+        "          {\n"
+        '            "condition_type": "COMPARISON",\n'
+        '            "left_operand": "<constante de la ontología>",\n'
+        '            "left_scope": "<SOURCE | TARGET_1 | TARGET_2 | CONTROLLER | OPPONENT>",\n'
+        '            "operator": "<EQUALS | NOT_EQUAL | GREATER_THAN | LESS_THAN | GREATER_OR_EQUAL | LESS_OR_EQUAL>",\n'
+        '            "right_operand": "<constante de la ontología | entero>",\n'
+        '            "right_scope": "<SOURCE | TARGET_1 | TARGET_2 | CONTROLLER | OPPONENT | null>"\n'
+        "          }\n"
+        "        ]\n"
+        "      },\n"
+        '      "effects": [\n'
+        "        {\n"
+        '          "effect_order": 1,\n'
+        '          "mode_id": "<entero | null>",\n'
+        '          "is_optional": false,\n'
+        '          "effect_type": "<constante de la ontología: DESTROY | DEAL_DAMAGE | DRAW_CARDS | ADD_MANA | EXILE | TAP | UNTAP | GAIN_LIFE | LOSE_LIFE | COUNTERSPELL | MOVE_ZONE | DEFINE_STATS | CREATE_TOKEN | ADD_COUNTER | REMOVE_COUNTER | SEARCH_LIBRARY | SHUFFLE | REVEAL | DISCARD | etc>",\n'
+        '          "target_info": {\n'
+        '            "requires_target": true | false,\n'
+        '            "target_owner": "<CONTROLLER | OPPONENT | SOURCE | TARGET_1 | TARGET_2 | null>",\n'
+        '            "target_zone": "<BATTLEFIELD | HAND | GRAVEYARD | LIBRARY | STACK | EXILE | COMMAND | null>  (zona ORIGEN del objetivo)",\n'
+        '            "target_count": {"min": "<entero>", "max": "<entero | *>"},\n'
+        '            "restrictions": {\n'
+        '              "logical_operator": "<AND | OR | NONE>",\n'
+        '              "types": ["<CREATURE | ARTIFACT | ENCHANTMENT | LAND | PLANESWALKER | PLAYER | SPELL | CARD | PERMANENT>"],\n'
+        '              "modifiers": ["<OTHER | TAPPED | NONBLACK | NONTOKEN | ATTACKING | etc>"]\n'
+        "            }\n"
+        "          },\n"
+        '          "effect_conditions": [\n'
+        "            {\n"
+        '              "condition_type": "COMPARISON",\n'
+        '              "left_operand": "<constante de la ontología>",\n'
+        '              "left_scope": "<SOURCE | TARGET_1 | CONTROLLER | OPPONENT>",\n'
+        '              "operator": "<EQUALS | NOT_EQUAL | GREATER_THAN | LESS_THAN | GREATER_OR_EQUAL | LESS_OR_EQUAL>",\n'
+        '              "right_operand": "<constante de la ontología | entero>",\n'
+        '              "right_scope": "<SOURCE | TARGET_1 | CONTROLLER | OPPONENT | null>"\n'
+        "            }\n"
+        "          ],\n"
+        '          "parameters": {\n'
+        '            "amount": "<entero | X | null | dynamic_amount (ver abajo)>",\n'
+        '            "duration": "<UNTIL_END_OF_TURN | PERMANENT | WHILE_CONDITION | null>",\n'
+        '            "chooser": "<CONTROLLER | TARGET_1 | OPPONENT | null>",\n'
+        '            "string_value": "<nombre de keyword | tipo de contador | color | null>",\n'
+        '            "destination_zone": "<HAND | GRAVEYARD | EXILE | BATTLEFIELD | LIBRARY | COMMAND | null>  (SOLO para MOVE_ZONE)",\n'
+        '            "token_definition": {\n'
+        '              "power": "<entero | null>",\n'
+        '              "toughness": "<entero | null>",\n'
+        '              "colors": ["<WHITE | BLUE | BLACK | RED | GREEN>"],\n'
+        '              "card_types": ["<CREATURE | ARTIFACT | ENCHANTMENT>"],\n'
+        '              "subtypes": ["<Soldier | Spirit | Zombie | Treasure>"],\n'
+        '              "keywords": ["<FLYING | HASTE | LIFELINK | VIGILANCE>"]\n'
+        '            } | null  (SOLO para CREATE_TOKEN)\n'
+        "          }\n"
+        "        }\n"
+        "      ]\n"
+        "    }\n"
+        "  ]\n"
+        "}\n"
+        "\n"
+        "--- dynamic_amount (cuando amount requiere cálculo en tiempo de juego) ---\n"
+        "Si amount debe contar objetos o leer un atributo de otra entidad, usa este "
+        "objeto EN LUGAR de un entero:\n"
+        "{\n"
+        '  "dynamic_calculation": "<COUNT | ATTRIBUTE_REFERENCE>",\n'
+        '  "distinct_property": "<CARD_TYPES | NAMES | MANA_VALUES | COLORS | null>",\n'
+        '  "multiplier": "<entero | null>",\n'
+        '  "offset": "<entero | null>",\n'
+        '  "source_ref": "<SOURCE | TARGET_1 | CONTROLLER | OPPONENT | null>",\n'
+        '  "attribute": "<Power | Toughness | ConvertedManaCost | null>  (solo ATTRIBUTE_REFERENCE)",\n'
+        '  "query": {  (solo COUNT)\n'
+        '    "target_zone": "<BATTLEFIELD | GRAVEYARD | EXILE | LIBRARY | ALL_ZONES | null>",\n'
+        '    "target_owner": "<CONTROLLER | OPPONENT | ANY | null>",\n'
+        '    "restrictions": {"logical_operator": "...", "types": [...], "modifiers": [...]}\n'
+        "  }\n"
+        "}\n"
+        "- COUNT: usa query para definir qué contar, ignora attribute.\n"
+        "- ATTRIBUTE_REFERENCE: usa source_ref + attribute, ignora query.\n"
+        "- multiplier para casos como 'twice the number of...' (multiplier: 2).\n"
+        "- offset para ajustes fijos: '+1' -> offset: 1, '-2' -> offset: -2.\n"
+        "- distinct_property para contar valores ÚNICOS de una propiedad entre "
+        "las cartas filtradas (ej. Tarmogoyf cuenta tipos de carta distintos en "
+        "cementerios -> distinct_property: CARD_TYPES). Si no se cuenta por "
+        "propiedad única, dejar null.\n"
+        "=== FIN ESQUEMA ==="
+    )
+
+    # ------------------------------------------------------------------
+    # Sección 4: Reglas semánticas duras
+    # ------------------------------------------------------------------
+    sec_reglas = (
+        "=== REGLAS SEMÁNTICAS (OBLIGATORIAS) ===\n"
+        "R1. POLIMORFISMO ESTRICTO: Tienes PROHIBIDO inventar constantes "
+        "combinadas o monolíticas. Ejemplos PROHIBIDOS: DestroyAndGainLife, "
+        "Target_Creature_Hand, COUNT_LANDS_CONTROLLED, ManaValueEqualsChargeCounters. "
+        "CORRECTO: descomponer en múltiples bloques atómicos dentro de effects[].\n"
+        "\n"
+        "R2. SPELL SOLO PARA INSTANT/SORCERY: su única ability es de tipo SPELL. "
+        "Permanentes (Creature, Artifact, Enchantment, Land, Planeswalker) NUNCA "
+        "tienen ability_type SPELL; su casteo se infiere del mana_cost en la raíz. "
+        "El array abilities[] de un permanente solo contiene habilidades impresas "
+        "(ACTIVATED, TRIGGERED, STATIC).\n"
+        "\n"
+        "R3. PERTENENCIA SOLO VIA target_owner: PROHIBIDO poner CONTROLLED_BY_YOU, "
+        "OPPONENT_CONTROLS o similares en restrictions.modifiers. La pertenencia "
+        "se indica ÚNICAMENTE con target_owner (CONTROLLER, OPPONENT, SOURCE, "
+        "TARGET_1, TARGET_2, null). Para 'creatures you control': "
+        "target_owner=CONTROLLER + restrictions.types=[CREATURE].\n"
+        "\n"
+        "R4. MOVE_ZONE: target_info.target_zone = zona de ORIGEN (donde está ahora). "
+        "parameters.destination_zone = zona de DESTINO (a donde se mueve). "
+        "Si effect_type es MOVE_ZONE, destination_zone es OBLIGATORIO (no null).\n"
+        "\n"
+        "R5. CREATE_TOKEN: parameters.token_definition es OBLIGATORIO como objeto "
+        "estructurado. PROHIBIDO meter datos de token en string_value. "
+        "parameters.amount indica cuántas fichas se crean.\n"
+        "\n"
+        "R6. CÁLCULOS DINÁMICOS: si amount requiere contar objetos en juego o "
+        "leer un atributo (ej. 'damage equal to its power', 'number of creatures "
+        "you control'), usa el objeto dynamic_amount. PROHIBIDO inventar constantes "
+        "como COUNT_LANDS_CONTROLLED o POWER_OF_SOURCE.\n"
+        "\n"
+        "R7. MODALES: si la carta dice 'Choose one', 'Choose two', etc., pon "
+        "modal_choices: {min: N, max: N} en la ability. Cada efecto lleva mode_id "
+        "(entero) indicando a qué viñeta modal pertenece. Para 'Choose one or more': "
+        "min=1, max=<total modos>. Si no es modal: modal_choices=null, mode_id=null.\n"
+        "\n"
+        "R8. target_count COMO RANGO: siempre objeto {min, max}. 'Up to two' = "
+        "{min:0, max:2}. 'Target creature' = {min:1, max:1}. 'Any number' = "
+        '{min:0, max:"*"}.\n'
+        "\n"
+        "R9. NULLABILIDAD: NUNCA omitas claves del esquema. Si un campo no aplica, "
+        "pon null (escalares) o [] (arrays). parameters SIEMPRE tiene las 6 claves: "
+        "amount, duration, chooser, string_value, destination_zone, token_definition.\n"
+        "\n"
+        "R10. NO BOOLEANS REDUNDANTES EN RAÍZ: PROHIBIDO añadir is_permanent, "
+        "is_nontoken, is_spell, etc. El motor infiere eso de card_types. "
+        "Permanent, Nonland, Nontoken solo se usan dentro de restrictions.\n"
+        "\n"
+        "R11. MULTIPLICIDAD: si la carta tiene varias habilidades independientes, "
+        "crea múltiples objetos en abilities[]. Si una habilidad tiene varios "
+        "efectos secuenciales, crea múltiples objetos en effects[]. Mantén "
+        "ability_order y effect_order correlativos (1, 2, 3...).\n"
+        "\n"
+        "R12. MATEMÁTICAS COMPLEJAS: NUNCA inventes constantes para operaciones "
+        "matemáticas (ej. PROHIBIDO: PLUS_ONE, MINUS_TWO, TARMOGOYF_COUNT). "
+        "Usa los campos del objeto dynamic_amount:\n"
+        "  - Si una carta dice 'plus 1' o 'plus one': usa offset: 1.\n"
+        "  - Si una carta dice 'minus X': usa offset: -X (entero negativo).\n"
+        "  - Si una carta requiere contar un atributo ÚNICO entre un grupo de "
+        "cartas (ej. Tarmogoyf cuenta tipos de carta distintos en cementerios, "
+        "NO cuenta cartas): usa distinct_property: CARD_TYPES.\n"
+        "  - Si la cuenta aplica a TODOS los jugadores (no solo controller u "
+        "opponent): usa target_owner: ANY.\n"
+        "  - Si la cuenta abarca TODAS las zonas: usa target_zone: ALL_ZONES.\n"
+        "\n"
+        "R13. SUPERTIPOS: si el tipo de la carta incluye palabras como "
+        "'Basic Land', 'Legendary Creature' o 'Snow Artifact', DEBES separar "
+        "los conceptos. 'Basic', 'Legendary' y 'Snow' van EXCLUSIVAMENTE en "
+        "supertypes. 'Land', 'Creature' o 'Artifact' van en card_types. "
+        "Búscalos en la ontología en sus categorías respectivas.\n"
+        "=== FIN REGLAS ==="
+    )
+
+    # ------------------------------------------------------------------
+    # Sección 5: Regla de cuarentena
+    # ------------------------------------------------------------------
+    sec_cuarentena = (
+        "=== REGLA DE CUARENTENA (HITL) ===\n"
+        "Si falta CUALQUIER constante necesaria para modelar la carta que no "
+        "exista en la ontología proporcionada:\n"
+        '  - Pon "requires_human_review": true.\n'
+        '  - Deja "abilities": [].\n'
+        '  - Devuelve "ontology_proposal" como LISTA con una entrada por cada '
+        "constante faltante.\n"
+        "  - Estructura de cada propuesta:\n"
+        "    {\n"
+        '      "keyword": "<término detectado en el Oracle Text>",\n'
+        '      "category": "<categoría OWL objetivo: Effect, Trigger_event, '
+        "KeywordAbility, Counters, Zones, PhaseandStep, Ability, Cost, CardType, "
+        'Status>",\n'
+        '      "block_kind": "<effect_type | trigger_event | cost_type | '
+        "keyword_ability | counter_type | zone | phase | status | "
+        'card_type | other>",\n'
+        '      "proposed_constant": "<NOMBRE_CONSTANTE_SUGERIDO>",\n'
+        '      "description": "<descripción técnica GENÉRICA en español, '
+        "independiente de la carta; define el concepto y su semántica de reglas "
+        'para implementar en Python>"\n'
+        "    }\n"
+        "  - La descripción debe ser reusable para cualquier carta y NO mencionar "
+        "cartas concretas.\n"
+        "  - No inventes constantes fuera de la ontología para abilities/effects.\n"
+        "=== FIN CUARENTENA ==="
+    )
+
+    # ------------------------------------------------------------------
+    # Sección 6: Valores reservados
+    # ------------------------------------------------------------------
+    sec_reservados = (
+        "=== VALORES RESERVADOS (Lista Blanca) ===\n"
+        "Las siguientes palabras son parte de la sintaxis del motor y NO necesitan "
+        "estar en la ontología:\n"
+        "NONE, COMPARISON, "
+        "EQUALS, GREATER_THAN, LESS_THAN, GREATER_OR_EQUAL, LESS_OR_EQUAL, NOT_EQUAL, "
+        "TARGET, TARGET_1, TARGET_2, SOURCE, CONTROLLER, OPPONENT, "
+        "ANY, ALL_ZONES, COUNT, ATTRIBUTE_REFERENCE, "
+        "PERMANENT, UNTIL_END_OF_TURN, WHILE_STATIC_ACTIVE, WHILE_CONDITION, "
+        "AND, OR, "
+        "X, *, TRUE, FALSE"
+        "y cualquier número entero.\n"
+        "Usa NONE cuando un campo opcional no aplica "
+        "(ej. event_type=NONE para instantes sin trigger).\n"
+        "IMPORTANTE: Si un campo del JSON contiene uno de estos valores reservados, "
+        "NO actives cuarentena por ese campo. Los valores reservados son punteros "
+        "dinámicos o instrucciones del motor, no constantes de la ontología.\n"
+        "TODAS las demás constantes (effect_type, event_type si no es NONE, "
+        "cost_type, counter types, keywords, zones, attributes en COMPARISON, "
+        "etc.) DEBEN existir en la ontología. Si NO aparecen, activa cuarentena.\n"
+        "=== FIN RESERVADOS ==="
+    )
+
+    # ------------------------------------------------------------------
+    # Sección 7: Checklist de autovalidación
+    # ------------------------------------------------------------------
+    sec_checklist = (
+        "=== CHECKLIST DE AUTOVALIDACIÓN ===\n"
+        "Antes de devolver tu respuesta, verifica internamente estos 8 puntos:\n"
+        "1. ¿Todas las constantes que usé existen en la ontología o son reservadas?\n"
+        "2. ¿Cada ability tiene ability_order correlativo (1, 2, 3...)?\n"
+        "3. ¿Cada effect tiene effect_order correlativo?\n"
+        "4. ¿parameters tiene las 6 claves (amount, duration, chooser, "
+        "string_value, destination_zone, token_definition) aunque sean null?\n"
+        "5. ¿target_count es objeto {min, max}, NO un entero?\n"
+        "6. ¿No hay constantes combinadas/monolíticas (ej. DestroyAndGainLife)?\n"
+        "7. ¿Si effect_type es MOVE_ZONE, destination_zone NO es null?\n"
+        "8. ¿Si effect_type es CREATE_TOKEN, token_definition NO es null?\n"
+        "Si algún punto falla, CORRIGE antes de responder.\n"
+        "=== FIN CHECKLIST ==="
+    )
+
+    # ------------------------------------------------------------------
+    # Sección 8: Few-shot examples
+    # ------------------------------------------------------------------
+    sec_ejemplos = (
+        "=== EJEMPLOS DE TRADUCCIÓN ===\n"
+        "\n"
+        "--- Ejemplo 1: Lightning Bolt (Instant simple, SPELL, un efecto) ---\n"
+        "Oracle Text: Lightning Bolt deals 3 damage to any target.\n"
+        "JSON-LD:\n"
+        "{\n"
+        '  "@context": "https://mtg-engine.example.org/schema/v1",\n'
+        '  "@type": "Card",\n'
+        '  "name": "Lightning Bolt",\n'
+        '  "mana_cost": "{R}",\n'
+        '  "supertypes": [],\n'
+        '  "card_types": ["INSTANT"],\n'
+        '  "subtypes": [],\n'
+        '  "base_attributes": {"power": null, "toughness": null, "loyalty": null, "color_indicator": []},\n'
+        '  "requires_human_review": false,\n'
+        '  "ontology_proposal": [],\n'
+        '  "abilities": [{\n'
+        '    "ability_order": 1,\n'
+        '    "ability_type": "SPELL",\n'
+        '    "zones_active": ["STACK"],\n'
+        '    "modal_choices": null,\n'
+        '    "costs": [{"cost_type": "MANA", "amount": "{R}", "restrictions": {"logical_operator": "NONE", "types": [], "modifiers": []}}],\n'
+        '    "trigger": {"event_type": "NONE", "conditions": []},\n'
+        '    "effects": [{\n'
+        '      "effect_order": 1,\n'
+        '      "mode_id": null,\n'
+        '      "is_optional": false,\n'
+        '      "effect_type": "DEAL_DAMAGE",\n'
+        '      "target_info": {\n'
+        '        "requires_target": true,\n'
+        '        "target_owner": null,\n'
+        '        "target_zone": "BATTLEFIELD",\n'
+        '        "target_count": {"min": 1, "max": 1},\n'
+        '        "restrictions": {"logical_operator": "OR", "types": ["CREATURE", "PLAYER", "PLANESWALKER"], "modifiers": []}\n'
+        "      },\n"
+        '      "effect_conditions": [],\n'
+        '      "parameters": {"amount": 3, "duration": null, "chooser": null, "string_value": null, "destination_zone": null, "token_definition": null}\n'
+        "    }]\n"
+        "  }]\n"
+        "}\n"
+        "\n"
+        "--- Ejemplo 2: Aether Vial (Artifact, TRIGGERED + ACTIVATED, COMPARISON, MOVE_ZONE) ---\n"
+        "Oracle Text:\n"
+        "At the beginning of your upkeep, you may put a charge counter on Aether Vial.\n"
+        "{T}: You may put a creature card with mana value equal to the number of "
+        "charge counters on Aether Vial from your hand onto the battlefield.\n"
+        "JSON-LD:\n"
+        "{\n"
+        '  "@context": "https://mtg-engine.example.org/schema/v1",\n'
+        '  "@type": "Card",\n'
+        '  "name": "Aether Vial",\n'
+        '  "mana_cost": "{1}",\n'
+        '  "supertypes": [],\n'
+        '  "card_types": ["ARTIFACT"],\n'
+        '  "subtypes": [],\n'
+        '  "base_attributes": {"power": null, "toughness": null, "loyalty": null, "color_indicator": []},\n'
+        '  "requires_human_review": false,\n'
+        '  "ontology_proposal": [],\n'
+        '  "abilities": [\n'
+        "    {\n"
+        '      "ability_order": 1,\n'
+        '      "ability_type": "TRIGGERED",\n'
+        '      "zones_active": ["BATTLEFIELD"],\n'
+        '      "modal_choices": null,\n'
+        '      "costs": [],\n'
+        '      "trigger": {"event_type": "UPKEEP", "conditions": []},\n'
+        '      "effects": [{\n'
+        '        "effect_order": 1,\n'
+        '        "mode_id": null,\n'
+        '        "is_optional": true,\n'
+        '        "effect_type": "ADD_COUNTER",\n'
+        '        "target_info": {\n'
+        '          "requires_target": false,\n'
+        '          "target_owner": "SOURCE",\n'
+        '          "target_zone": "BATTLEFIELD",\n'
+        '          "target_count": {"min": 1, "max": 1},\n'
+        '          "restrictions": {"logical_operator": "NONE", "types": [], "modifiers": []}\n'
+        "        },\n"
+        '        "effect_conditions": [],\n'
+        '        "parameters": {"amount": 1, "duration": null, "chooser": null, "string_value": "Charge", "destination_zone": null, "token_definition": null}\n'
+        "      }]\n"
+        "    },\n"
+        "    {\n"
+        '      "ability_order": 2,\n'
+        '      "ability_type": "ACTIVATED",\n'
+        '      "zones_active": ["BATTLEFIELD"],\n'
+        '      "modal_choices": null,\n'
+        '      "costs": [{"cost_type": "TAP", "amount": null, "restrictions": {"logical_operator": "NONE", "types": [], "modifiers": []}}],\n'
+        '      "trigger": {"event_type": "NONE", "conditions": []},\n'
+        '      "effects": [{\n'
+        '        "effect_order": 1,\n'
+        '        "mode_id": null,\n'
+        '        "is_optional": true,\n'
+        '        "effect_type": "MOVE_ZONE",\n'
+        '        "target_info": {\n'
+        '          "requires_target": false,\n'
+        '          "target_owner": "CONTROLLER",\n'
+        '          "target_zone": "HAND",\n'
+        '          "target_count": {"min": 1, "max": 1},\n'
+        '          "restrictions": {"logical_operator": "AND", "types": ["CREATURE"], "modifiers": []}\n'
+        "        },\n"
+        '        "effect_conditions": [\n'
+        "          {\n"
+        '            "condition_type": "COMPARISON",\n'
+        '            "left_operand": "ConvertedManaCost",\n'
+        '            "left_scope": "TARGET_1",\n'
+        '            "operator": "EQUALS",\n'
+        '            "right_operand": "Charge",\n'
+        '            "right_scope": "SOURCE"\n'
+        "          }\n"
+        "        ],\n"
+        '        "parameters": {"amount": 1, "duration": null, "chooser": null, "string_value": null, "destination_zone": "BATTLEFIELD", "token_definition": null}\n'
+        "      }]\n"
+        "    }\n"
+        "  ]\n"
+        "}\n"
+        "\n"
+        "--- Ejemplo 3: Raise the Alarm (Instant, CREATE_TOKEN con token_definition) ---\n"
+        "Oracle Text: Create two 1/1 white Soldier creature tokens.\n"
+        "JSON-LD:\n"
+        "{\n"
+        '  "@context": "https://mtg-engine.example.org/schema/v1",\n'
+        '  "@type": "Card",\n'
+        '  "name": "Raise the Alarm",\n'
+        '  "mana_cost": "{1}{W}",\n'
+        '  "supertypes": [],\n'
+        '  "card_types": ["INSTANT"],\n'
+        '  "subtypes": [],\n'
+        '  "base_attributes": {"power": null, "toughness": null, "loyalty": null, "color_indicator": []},\n'
+        '  "requires_human_review": false,\n'
+        '  "ontology_proposal": [],\n'
+        '  "abilities": [{\n'
+        '    "ability_order": 1,\n'
+        '    "ability_type": "SPELL",\n'
+        '    "zones_active": ["STACK"],\n'
+        '    "modal_choices": null,\n'
+        '    "costs": [{"cost_type": "MANA", "amount": "{1}{W}", "restrictions": {"logical_operator": "NONE", "types": [], "modifiers": []}}],\n'
+        '    "trigger": {"event_type": "NONE", "conditions": []},\n'
+        '    "effects": [{\n'
+        '      "effect_order": 1,\n'
+        '      "mode_id": null,\n'
+        '      "is_optional": false,\n'
+        '      "effect_type": "CREATE_TOKEN",\n'
+        '      "target_info": {\n'
+        '        "requires_target": false,\n'
+        '        "target_owner": "CONTROLLER",\n'
+        '        "target_zone": "BATTLEFIELD",\n'
+        '        "target_count": {"min": 1, "max": 1},\n'
+        '        "restrictions": {"logical_operator": "NONE", "types": [], "modifiers": []}\n'
+        "      },\n"
+        '      "effect_conditions": [],\n'
+        '      "parameters": {\n'
+        '        "amount": 2,\n'
+        '        "duration": null,\n'
+        '        "chooser": null,\n'
+        '        "string_value": null,\n'
+        '        "destination_zone": null,\n'
+        '        "token_definition": {\n'
+        '          "power": 1,\n'
+        '          "toughness": 1,\n'
+        '          "colors": ["WHITE"],\n'
+        '          "card_types": ["CREATURE"],\n'
+        '          "subtypes": ["Soldier"],\n'
+        '          "keywords": []\n'
+        "        }\n"
+        "      }\n"
+        "    }]\n"
+        "  }]\n"
+        "}\n"
+        "=== FIN EJEMPLOS ==="
+    )
+
+    # ------------------------------------------------------------------
+    # Sección 9: Anti-ejemplos (prevenir alucinaciones por bias)
+    # ------------------------------------------------------------------
+    sec_anti_ejemplos = (
+        "=== ANTI-EJEMPLOS (INCORRECTO vs CORRECTO) ===\n"
+        "Estudia estos errores frecuentes. Si tu salida se parece a la columna "
+        "INCORRECTO, PARA y corrígelo.\n"
+        "\n"
+        "1. Constante monolítica en amount:\n"
+        '   INCORRECTO: "amount": "COUNT_LANDS_CONTROLLED"\n'
+        '   CORRECTO:   "amount": {\n'
+        '     "dynamic_calculation": "COUNT",\n'
+        '     "distinct_property": null,\n'
+        '     "multiplier": null,\n'
+        '     "offset": null,\n'
+        '     "source_ref": null,\n'
+        '     "attribute": null,\n'
+        '     "query": {\n'
+        '       "target_zone": "BATTLEFIELD",\n'
+        '       "target_owner": "CONTROLLER",\n'
+        '       "restrictions": {"logical_operator": "AND", "types": ["LAND"], "modifiers": []}\n'
+        "     }\n"
+        "   }\n"
+        "\n"
+        "2. Referencia a atributo como constante:\n"
+        '   INCORRECTO: "amount": "POWER_OF_SOURCE"\n'
+        '   CORRECTO:   "amount": {\n'
+        '     "dynamic_calculation": "ATTRIBUTE_REFERENCE",\n'
+        '     "distinct_property": null,\n'
+        '     "multiplier": null,\n'
+        '     "offset": null,\n'
+        '     "source_ref": "SOURCE",\n'
+        '     "attribute": "Power",\n'
+        '     "query": null\n'
+        "   }\n"
+        "\n"
+        "3. Constante para operación matemática:\n"
+        '   INCORRECTO: "amount": "PLUS_ONE" o "amount": "TARMOGOYF_COUNT"\n'
+        "   CORRECTO (Tarmogoyf: 'power equal to the number of card types "
+        "among cards in all graveyards, toughness is that number plus 1'):\n"
+        '   Power -> "amount": {\n'
+        '     "dynamic_calculation": "COUNT",\n'
+        '     "distinct_property": "CARD_TYPES",\n'
+        '     "multiplier": null,\n'
+        '     "offset": null,\n'
+        '     "source_ref": null,\n'
+        '     "attribute": null,\n'
+        '     "query": {"target_zone": "GRAVEYARD", "target_owner": "ANY", '
+        '"restrictions": {"logical_operator": "AND", "types": ["CARD"], "modifiers": []}}\n'
+        "   }\n"
+        '   Toughness -> misma query pero con "offset": 1\n'
+        "\n"
+        "4. Token como string en vez de objeto:\n"
+        '   INCORRECTO: "token_definition": null, "string_value": "1/1 white soldier"\n'
+        '   CORRECTO:   "string_value": null, "token_definition": {\n'
+        '     "power": 1, "toughness": 1,\n'
+        '     "colors": ["WHITE"],\n'
+        '     "card_types": ["CREATURE"],\n'
+        '     "subtypes": ["Soldier"],\n'
+        '     "keywords": []\n'
+        "   }\n"
+        "\n"
+        "5. Pertenencia en modifiers en vez de target_owner:\n"
+        '   INCORRECTO: "modifiers": ["CONTROLLED_BY_YOU"]\n'
+        '   CORRECTO:   "target_owner": "CONTROLLER", "modifiers": []\n'
+        "\n"
+        "6. target_count como entero:\n"
+        '   INCORRECTO: "target_count": 2\n'
+        '   CORRECTO:   "target_count": {"min": 2, "max": 2}\n'
+        "=== FIN ANTI-EJEMPLOS ==="
+    )
+
+    return "\n\n".join([
+        sec_rol,
+        sec_ontologia,
+        sec_esquema,
+        sec_reglas,
+        sec_cuarentena,
+        sec_reservados,
+        sec_checklist,
+        sec_ejemplos,
+        sec_anti_ejemplos,
+    ])
 
 # ---------------------------------------------------------------------------
 # 4. LLAMADA AL LLM
@@ -184,11 +659,25 @@ def _llamar_llm(mensajes: List[Dict[str, str]]) -> str:
         temperature=_TEMPERATURE,
     )
     choice = respuesta.choices[0] if respuesta and respuesta.choices else None
+
+    finish_reason = getattr(choice, "finish_reason", None)
+    if finish_reason == "length":
+        print(
+            "[WARN] Respuesta truncada por límite de tokens "
+            f"(_MAX_TOKENS={_MAX_TOKENS}). "
+            "Considera aumentar LITELLM_MAX_TOKENS."
+        )
+
     msg = getattr(choice, "message", None)
     contenido = getattr(msg, "content", None) if msg else None
     if isinstance(contenido, str):
         return contenido.strip()
     return ""
+
+
+def _limpiar_trailing_commas(texto: str) -> str:
+    """Elimina comas finales antes de } o ] (error frecuente de LLMs)."""
+    return re.sub(r",\s*([}\]])", r"\1", texto)
 
 
 def _extraer_json(texto: str) -> Dict[str, Any]:
@@ -221,9 +710,165 @@ def _extraer_json(texto: str) -> Dict[str, Any]:
         elif ch == "}":
             profundidad -= 1
             if profundidad == 0:
-                return json.loads(limpio[inicio : i + 1])
+                fragmento = limpio[inicio : i + 1]
+                try:
+                    return json.loads(fragmento)
+                except json.JSONDecodeError:
+                    fragmento_limpio = _limpiar_trailing_commas(fragmento)
+                    try:
+                        return json.loads(fragmento_limpio)
+                    except json.JSONDecodeError as e:
+                        raise ValueError(
+                            f"JSON extraído pero con errores de sintaxis "
+                            f"incluso tras limpiar trailing commas: {e}"
+                        ) from e
 
     raise ValueError("JSON incompleto: no se cerraron todas las llaves.")
+
+
+# ---------------------------------------------------------------------------
+# Valores reservados que no necesitan estar en la ontología
+# ---------------------------------------------------------------------------
+
+
+_RESERVED_VALUES: frozenset[str] = frozenset({
+    # Lógica y comparación
+    "NONE", "COMPARISON",
+    "EQUALS", "NOT_EQUAL", "GREATER_THAN", "LESS_THAN",
+    "GREATER_OR_EQUAL", "LESS_OR_EQUAL",
+    "AND", "OR",
+    # Cálculos dinámicos
+    "COUNT", "ATTRIBUTE_REFERENCE",
+    # Propiedades distintas (para distinct_property)
+    "CARD_TYPES", "NAMES", "MANA_VALUES", "COLORS",
+    # Punteros de entidad (motor)
+    "TARGET", "TARGET_1", "TARGET_2", "SOURCE", "CONTROLLER", "OPPONENT",
+    "ANY", "ALL_ZONES",
+    # Duraciones
+    "PERMANENT", "UNTIL_END_OF_TURN", "WHILE_CONDITION", "WHILE_STATIC_ACTIVE",
+    # Tipos de habilidad
+    "SPELL", "ACTIVATED", "TRIGGERED", "STATIC",
+    # Tipos de coste base
+    "MANA", "TAP", "SACRIFICE", "DISCARD", "PAY_LIFE", "REMOVE_COUNTER",
+    # Comodines
+    "X", "*",
+    # Zonas (estructurales del motor)
+    "BATTLEFIELD", "HAND", "GRAVEYARD", "LIBRARY", "STACK", "EXILE", "COMMAND",
+    # Tipos de carta base (usados en restrictions.types)
+    "INSTANT", "SORCERY", "CREATURE", "ARTIFACT", "ENCHANTMENT", "LAND",
+    "PLANESWALKER", "PLAYER", "CARD", "PERMANENT", "SPELL",
+    # Supertipos
+    "LEGENDARY", "BASIC", "SNOW",
+    # Colores
+    "WHITE", "BLUE", "BLACK", "RED", "GREEN",
+})
+
+_PARAM_REQUIRED_KEYS: frozenset[str] = frozenset({
+    "amount", "duration", "chooser", "string_value",
+    "destination_zone", "token_definition",
+})
+
+
+def _validar_esquema(
+    resultado: Dict[str, Any], diccionario: Dict[str, Any],
+) -> List[str]:
+    """Valida estructura y constantes del JSON-LD contra el esquema V1.2."""
+    errores: List[str] = []
+
+    todas_constantes: set[str] = set()
+    for valores in diccionario.values():
+        if isinstance(valores, list):
+            todas_constantes.update(valores)
+
+    def _es_valida(const: Any) -> bool:
+        if const is None or isinstance(const, (int, float, bool)):
+            return True
+        s = str(const)
+        if s.lstrip("-").isdigit():
+            return True
+        return s in _RESERVED_VALUES or s in todas_constantes
+
+    for campo in ("name", "card_types", "abilities"):
+        if campo not in resultado:
+            errores.append(f"Falta campo obligatorio en raíz: '{campo}'")
+
+    base = resultado.get("base_attributes")
+    if not isinstance(base, dict):
+        errores.append("Falta 'base_attributes' como objeto en raíz")
+
+    abilities = resultado.get("abilities")
+    if not isinstance(abilities, list):
+        return errores
+
+    for ai, ab in enumerate(abilities, 1):
+        prefix = f"abilities[{ai}]"
+        if not isinstance(ab, dict):
+            errores.append(f"{prefix}: no es un objeto")
+            continue
+
+        for key in ("ability_order", "ability_type", "effects"):
+            if key not in ab:
+                errores.append(f"{prefix}: falta '{key}'")
+
+        ab_type = ab.get("ability_type")
+        if ab_type and not _es_valida(ab_type):
+            errores.append(
+                f"{prefix}: ability_type '{ab_type}' no está en ontología ni reservados"
+            )
+
+        effects = ab.get("effects")
+        if not isinstance(effects, list):
+            continue
+
+        for ei, ef in enumerate(effects, 1):
+            ep = f"{prefix}.effects[{ei}]"
+            if not isinstance(ef, dict):
+                errores.append(f"{ep}: no es un objeto")
+                continue
+
+            for key in ("effect_order", "effect_type", "target_info", "parameters"):
+                if key not in ef:
+                    errores.append(f"{ep}: falta '{key}'")
+
+            et = ef.get("effect_type")
+            if et and not _es_valida(et):
+                errores.append(
+                    f"{ep}: effect_type '{et}' no está en ontología ni reservados"
+                )
+
+            ti = ef.get("target_info")
+            if isinstance(ti, dict):
+                tc = ti.get("target_count")
+                if tc is not None and not isinstance(tc, dict):
+                    errores.append(
+                        f"{ep}.target_info: target_count debe ser "
+                        f"objeto {{min, max}}, no {type(tc).__name__}"
+                    )
+                elif isinstance(tc, dict):
+                    for k in ("min", "max"):
+                        if k not in tc:
+                            errores.append(
+                                f"{ep}.target_info.target_count: falta '{k}'"
+                            )
+
+            params = ef.get("parameters")
+            if isinstance(params, dict):
+                faltantes = _PARAM_REQUIRED_KEYS - params.keys()
+                if faltantes:
+                    errores.append(
+                        f"{ep}.parameters: faltan claves {sorted(faltantes)}"
+                    )
+
+                if et == "MOVE_ZONE" and not params.get("destination_zone"):
+                    errores.append(
+                        f"{ep}: MOVE_ZONE requiere destination_zone no nulo"
+                    )
+                if et == "CREATE_TOKEN" and not params.get("token_definition"):
+                    errores.append(
+                        f"{ep}: CREATE_TOKEN requiere token_definition no nulo"
+                    )
+
+    return errores
 
 
 def traducir_oracle_text(
@@ -233,6 +878,7 @@ def traducir_oracle_text(
     coste_mana: str = "",
     tipos: str = "",
     correccion_usuario: Optional[str] = None,
+    diccionario: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Traduce el Oracle Text de una carta a JSON-LD usando el LLM."""
     partes_usuario: List[str] = []
@@ -256,7 +902,16 @@ def traducir_oracle_text(
     ]
 
     texto_crudo = _llamar_llm(mensajes)
-    return _extraer_json(texto_crudo)
+    resultado = _extraer_json(texto_crudo)
+
+    if diccionario and not resultado.get("requires_human_review"):
+        errores = _validar_esquema(resultado, diccionario)
+        if errores:
+            print(f"[VALIDACIÓN] {len(errores)} problema(s) en el JSON generado:")
+            for err in errores:
+                print(f"  - {err}")
+
+    return resultado
 
 
 # ---------------------------------------------------------------------------
@@ -370,6 +1025,7 @@ def procesar_carta(
 
     resultado = traducir_oracle_text(
         oracle_text, session.system_prompt, nombre_carta, coste_mana, tipos,
+        diccionario=session.diccionario,
     )
 
     while resultado.get("requires_human_review"):
@@ -394,6 +1050,7 @@ def procesar_carta(
                     coste_mana,
                     tipos,
                     correccion_usuario=correccion,
+                    diccionario=session.diccionario,
                 )
                 continue
 
@@ -412,22 +1069,31 @@ def procesar_carta(
 
 
 _CARTAS_EJEMPLO: List[Dict[str, str]] = [
-    {
-        "nombre": "Lightning Bolt",
-        "coste": "{R}",
+        {
+        "nombre": "Raise the Alarm",
+        "coste": "{1}{W}",
         "tipos": "Instant",
-        "oracle": "Lightning Bolt deals 3 damage to any target.",
+        "oracle": "Create two 1/1 white Soldier creature tokens.",
     },
     {
-        "nombre": "Aether Vial",
-        "coste": "{1}",
-        "tipos": "Artifact",
+        "nombre": "Cryptic Command",
+        "coste": "{1}{U}{U}{U}",
+        "tipos": "Instant",
         "oracle": (
-            "At the beginning of your upkeep, you may put a charge counter "
-            "on Aether Vial.\n"
-            "{T}: You may put a creature card with mana value equal to the "
-            "number of charge counters on Aether Vial from your hand onto "
-            "the battlefield."
+            "Choose two —\n"
+            "• Counter target spell.\n"
+            "• Return target permanent to its owner's hand.\n"
+            "• Tap all creatures your opponents control.\n"
+            "• Draw a card."
+        ),
+    },
+    {
+        "nombre": "Tarmogoyf",
+        "coste": "{1}{G}",
+        "tipos": "Creature",
+        "oracle": (
+            "Tarmogoyf's power is equal to the number of card types among cards "
+            "in all graveyards and its toughness is equal to that number plus 1."
         ),
     },
     {
@@ -449,6 +1115,16 @@ _CARTAS_EJEMPLO: List[Dict[str, str]] = [
             "tapped, then shuffle."
         ),
     },
+    {
+        "nombre": "Ashaya, soul of the wilds",
+        "coste": "{3}{G}{G}",
+        "tipos": "Legendary Creature",
+        "oracle": (
+            "Ashaya, Soul of the Wild's power and toughness are each equal to the number of lands you control."
+            "Nontoken creatures you control are Forest lands in addition to their other types. (They're still affected by summoning sickness.)"
+        ),
+    },
+    
 ]
 
 

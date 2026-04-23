@@ -1,8 +1,8 @@
 {
   "Ability": [
     "Activated_ability",
+    "Spell_ability",
     "Static_ability",
-    "Tap",
     "Triggered_ability"
   ],
   "CardAtribute": [
@@ -10,9 +10,7 @@
     "ConvertedManaCost",
     "ManaCost",
     "Power",
-    "Toughness",
-    "CardType",
-    "Nonland"
+    "Toughness"
   ],
   "CardSupertype": [
     "Basic",
@@ -26,6 +24,14 @@
     "Land",
     "Planeswalker",
     "Sorcery"
+  ],
+  "Costs": [
+    "Discard_cost",
+    "Mana_cost",
+    "Pay_life_cost",
+    "Remove_counters_cost",
+    "Sacrifice_cost",
+    "Tap_cost"
   ],
   "Counters": [
     "+-X_+-Y",
@@ -42,18 +48,27 @@
     "Time"
   ],
   "Effect": [
+    "ADD_SUBTYPE",
+    "ADD_TYPE",
     "Add_counter",
+    "COUNTER",
+    "CREATE_TOKEN",
     "Deal_damage",
     "Destroy",
     "Discard",
     "Draw_card",
     "Exile",
+    "Goad",
     "Lose_life",
+    "MOVE_ZONE",
     "Put_creature_from_hand",
     "Put_onto_battlefield_tapped",
     "Reveal",
+    "SET_POWER_TOUGHNESS",
+    "SET_POWER_TOUGHNESS_DYNAMIC",
     "Search_library",
-    "Shuffle"
+    "Shuffle",
+    "TAP"
   ],
   "GameEntity": [
     "Manapool",
@@ -71,13 +86,13 @@
     "Hexproof",
     "Indestructible",
     "Lifelink",
+    "May",
     "Menace",
     "Protection",
     "Reach",
     "Trample",
     "Vigilance",
-    "Ward",
-    "May"
+    "Ward"
   ],
   "PhaseandStep": [
     "Beggining_phase",
@@ -93,17 +108,14 @@
     "Untap",
     "Upkeep"
   ],
-  "TargetType": [
-    "Target_any",
-    "Target_card_hand",
-    "Target_creature",
-    "Target_creature_card_hand",
-    "Target_permanent",
-    "Target_player",
-    "Target_self",
-    "Target_self_player",
-    "Target_spell",
-    "Target_card_library"
+  "Status": [
+    "Attacking",
+    "Blocking",
+    "Goaded",
+    "Nonland",
+    "Nontoken",
+    "Tapped",
+    "Untapped"
   ],
   "Trigger_event": [
     "Cast",

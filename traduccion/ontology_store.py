@@ -184,8 +184,6 @@ def resolve_parent_class(g: Graph, category: str) -> Tuple[str, URIRef] | None:
         "effect": "Effect",
         "trigger": "Trigger_event",
         "trigger_event": "Trigger_event",
-        "target": "TargetType",
-        "targettype": "TargetType",
         "keyword_ability": "KeywordAbility",
         "keywordability": "KeywordAbility",
         "keyword": "KeywordAbility",
@@ -206,6 +204,10 @@ def resolve_parent_class(g: Graph, category: str) -> Tuple[str, URIRef] | None:
         "gameentity": "GameEntity",
         "card_atribute": "CardAtribute",
         "cardatribute": "CardAtribute",
+        "cost": "Cost",
+        "costs": "Cost",
+        "status": "Status",
+        "state": "Status",
     }
     norm = category.strip().lower().replace(" ", "_")
     resolved = _ALIASES.get(norm)
