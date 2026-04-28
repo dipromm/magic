@@ -4,64 +4,94 @@
 
 ### 1. Contexto y objetivo de la iteración
 
-Durante esta iteración se consolidó el módulo de traducción semántica de cartas de Magic: The Gathering como un proceso reproducible orientado a consola (CLI), con soporte de revisión humana y sincronización de conocimiento con ontología formal. El objetivo fue transformar texto Oracle en una representación estructurada JSON-LD utilizable por el motor de reglas, minimizando ambigüedad semántica y maximizando trazabilidad técnica.
+Durante esta iteración se pasó de una idea inicial de “traductor asistido por LLM” a un pipeline operativo orientado a ingeniería: entrada de Oracle Text, traducción estructurada, control de calidad semántico y actualización controlada de ontología.
+
+El objetivo práctico no fue solo “generar JSON”, sino conseguir una salida que pudiera ser consumida por un motor de reglas sin depender de lógica ad-hoc por carta. Para ello, se priorizó una arquitectura con tres garantías:
+
+1. **Trazabilidad formal:** OWL como base de conocimiento persistente y JSON como vista operativa.
+2. **Gobernanza humana:** cuarentena + revisión interactiva cuando el modelo detecta lagunas.
+3. **Escalabilidad semántica:** representación polimórfica de condiciones y cálculos para evitar constantes monolíticas.
 
 ### 2. Decisiones de arquitectura adoptadas
 
-**Cambio de enfoque de ejecución:** se descartó temporalmente el acoplamiento a interfaz web de agente para priorizar un script autónomo CLI (`traduccion/agente_mtg_cli.py`), más simple de depurar y validar en fase de investigación.
+**Cambio de enfoque de ejecución (web -> CLI):** se descartó el enfoque inicial ligado a `google.adk`/UI y se adoptó un script de terminal autónomo (`traduccion/agente_mtg_cli.py`). Esta decisión redujo complejidad de ejecución y permitió controlar mejor el ciclo traducir-validar-corregir.
 
-**Ontología como autoridad de dominio:** el sistema opera con una ontología cargada en JSON (derivada de OWL), inyectada en el prompt como diccionario cerrado de constantes permitidas.
+**Ontología como contrato de dominio:** en lugar de un diccionario fijo embebido, se tomó OWL como fuente de verdad y se generó JSON operativo desde ese grafo. Así, el modelo trabaja sobre un vocabulario explícito y versionable.
 
-**Integración Human-in-the-Loop (HITL):** ante lagunas ontológicas, la carta entra en cuarentena y se solicita intervención del investigador para aceptar/rechazar/corregir propuestas.
+**HITL granular por propuesta:** se sustituyó una decisión global (aceptar/rechazar todo) por revisión bloque a bloque `[Y/N/C]`, permitiendo aceptar parcialmente propuestas y reinyectar correcciones específicas.
 
-**Persistencia dual de conocimiento:** las propuestas aceptadas se integran tanto en JSON como en OWL para mantener consistencia entre capa operativa (inferencia) y capa formal (modelo semántico).
+**Persistencia dual y atómica:** las propuestas aceptadas se escriben en OWL (subclases) y en JSON canónico, con guardado atómico y copias de seguridad para evitar corrupción de ficheros.
+
+**Defensa en profundidad:** se combinó control por prompt (reglas/anti-ejemplos), parser robusto de JSON y validación determinista post-LLM para reducir errores estructurales y semánticos.
 
 ### 3. Implementación técnica realizada
 
-En `traduccion/agente_mtg_cli.py` se implementó:
+La implementación quedó dividida en dos módulos principales:
 
-- **Configuración robusta de credenciales:** validación explícita de `POLIGPT_API_KEY` y fallo temprano con instrucciones de entorno si falta.
+- **`traduccion/agente_mtg_cli.py`**
+  - Carga segura de credenciales (`POLIGPT_API_KEY`) y configuración del endpoint PoliGPT.
+  - Construcción dinámica del prompt con la ontología activa.
+  - Traducción Oracle Text -> JSON-LD vía `litellm`.
+  - Extracción robusta del JSON (`_extraer_json`) y saneo de casos frecuentes de salida inválida (p.ej., truncación/comas finales).
+  - Bucle de cuarentena con revisión por propuesta (`_collect_proposals`, `_review_proposals_by_block`).
+  - Re-traducción iterativa con correcciones humanas.
+  - Validación determinista de esquema y constantes (`_validar_esquema`) como segunda capa de control.
 
-- **Construcción dinámica del prompt de sistema** con la ontología vigente (`build_system_prompt(...)`), imponiendo salida estricta en JSON-LD y reglas de cuarentena.
+- **`traduccion/ontology_store.py`**
+  - Carga del OWL con `rdflib`.
+  - Descubrimiento automático de clases raíz del namespace.
+  - Exportación recursiva de subclases a diccionario JSON.
+  - Resolución de categorías y aplicación de propuestas aceptadas como nuevas subclases OWL.
+  - Persistencia atómica en JSON y RDF con backup.
 
-- **Traducción LLM→JSON** mediante llamada a modelo (`litellm`) y parser defensivo (`_extraer_json`) para aislar el primer objeto JSON balanceado.
-
-- **Bucle de revisión por bloques semánticos:**
-  - Detección de `requires_human_review`.
-  - Consolidación de propuestas (`ontology_proposal` / `missing_building_blocks`).
-  - Revisión interactiva por bloque (Y/N/C).
-  - Re-traducción con feedback humano cuando hay correcciones.
-
-- **Actualización del estado de sesión** (`SessionState`) con:
-  - Carga o reconstrucción del diccionario desde OWL/JSON.
-  - Persistencia atómica de cambios aceptados.
-  - Reconstrucción automática del prompt tras cada actualización de ontología.
-
-- Casos de prueba iniciales en ejecución CLI con cartas de distinta complejidad (ej.: Lightning Bolt, Aether Vial, Thoughtseize, Path to Exile).
+Además, se integraron pruebas con cartas de dificultad progresiva para ejercitar el camino feliz y los caminos de cuarentena (incluyendo casos con cálculos dinámicos y efectos no cubiertos inicialmente).
 
 ### 4. Justificación metodológica
 
-El diseño híbrido LLM + HITL se adoptó porque el dominio de MTG contiene excepciones semánticas y mecánicas históricas que hacen inviable una cobertura perfecta en fases tempranas. Este enfoque permite:
+El dominio de MTG combina alta variabilidad lingüística con semántica reglamentaria estricta. En ese contexto, ni un enfoque puramente generativo ni uno puramente manual resultan eficientes:
 
-- Avanzar en cobertura funcional sin bloquear desarrollo.
-- Capturar "nuevos bloques de construcción" de forma controlada.
-- Convertir la revisión manual en mejora incremental de la ontología.
+- Un enfoque **solo LLM** acelera, pero tiende a inventar estructuras o constantes si no se acota.
+- Un enfoque **solo manual** mantiene rigor, pero no escala al volumen de cartas y variantes.
+
+Por ello se adoptó un modelo híbrido **LLM + OWL + HITL**, donde:
+
+1. El LLM interpreta texto natural y propone estructura.
+2. La ontología delimita el vocabulario permitido.
+3. El humano valida propuestas de crecimiento del dominio.
+
+Este patrón transforma los errores del modelo en entradas útiles para enriquecer la ontología, en lugar de tratarlos como fallos terminales del pipeline.
 
 ### 5. Riesgos identificados y mitigación
 
 | Riesgo | Mitigación |
 |--------|-----------|
-| Salida del modelo no completamente conforme al diccionario | Cuarentena y revisión humana por bloque |
-| Variabilidad en formato de salida del LLM | Extracción robusta de JSON |
-| Deriva semántica entre OWL y JSON | Persistencia dual y regeneración del prompt desde diccionario actualizado |
+| Salida semánticamente incorrecta pese a “formato válido” | Reglas de prompt + validador determinista post-LLM + HITL |
+| Invención de constantes monolíticas (no reutilizables) | Modelo polimórfico (`COMPARISON`, `dynamic_amount_object`) y anti-ejemplos explícitos |
+| Variabilidad del formato de salida del LLM | Parser robusto, limpieza de trailing commas y control de truncación por tokens |
+| Deriva entre OWL formal y JSON operativo | Exportado desde OWL, fusión conservadora y persistencia dual sincronizada |
+| Rechazo/aceptación demasiado gruesa en cuarentena | Revisión granular por bloque con decisiones independientes |
+| Falsos positivos por valores estructurales del motor | Catálogo de valores reservados alineado entre prompt y validador |
 
 ### 6. Mejora recomendada para siguiente iteración
 
-Se propone añadir un validador determinista post-LLM (en Python) que compruebe automáticamente que cada constante usada en `resolution_blocks` pertenece a la ontología cargada. Con ello, la autoridad semántica pasaría de "prompt-only" a "prompt + verificación formal", reforzando reproducibilidad experimental y rigor académico.
+Las mejoras inmediatas recomendadas son:
+
+1. **Automatizar evaluación por lotes** con métricas estables (parseabilidad, tasa de cuarentena, iteraciones HITL por carta, precisión de propuestas).
+2. **Congelar una versión estable del esquema V1.2.x** y mantener changelog de cambios de contrato.
+3. **Añadir tests unitarios del validador** para prevenir regresiones al ampliar reglas.
+4. **Definir política formal de aceptación ontológica** (criterios de entrada, nomenclatura y revisión).
+5. **Conectar de forma completa JSON-LD -> objetos del motor** con pruebas de integración extremo a extremo.
 
 ### 7. Resultado de la iteración
 
-Se obtuvo un pipeline funcional de traducción semántica con revisión humana integrada, trazabilidad de propuestas ontológicas y capacidad de evolución incremental del conocimiento formal del sistema, alineado con el objetivo del TFG de unir PLN, ontologías OWL y motor de reglas ejecutable.
+El resultado de esta iteración es un pipeline funcional y trazable que:
+
+- Traduce Oracle Text a JSON-LD con estructura compatible con el motor.
+- Detecta lagunas de conocimiento y las canaliza mediante cuarentena.
+- Permite expansión controlada de la ontología con persistencia real en OWL y JSON.
+- Reduce errores semánticos mediante validación adicional no dependiente del LLM.
+
+En términos de TFG, esta fase deja resuelto el puente entre PLN y representación formal ejecutable: el sistema ya no se limita a “extraer texto”, sino que gestiona conocimiento de dominio de forma incremental, auditada y técnicamente reproducible.
 
 ---
 
@@ -211,277 +241,182 @@ Con estas cartas, el sistema activó cuarentena correctamente, propuso cada cons
 
 **Lección.** La selección de casos de prueba es crítica en validación de sistemas basados en LLM: cartas "demasiado simples" no ejercitan los caminos de cuarentena y dan una falsa sensación de fallo.
 
-#### 8.12. Rediseño del esquema JSON-LD a V1.2 — Arquitectura jerárquica
+#### 8.12. Rediseño del contrato JSON-LD a V1.2 (de bloques planos a jerarquía explícita)
 
-**Motivación.** El esquema original utilizaba una estructura plana basada en `resolution_blocks` con campos como `target_type` y `trigger_condition` al mismo nivel. Este diseño presentaba tres problemas fundamentales:
+En esta fase se tomó la decisión más importante de toda la iteración: abandonar la estructura semiplana anterior y adoptar un contrato jerárquico estricto orientado al motor.  
+El problema real no era solo de “formato”, sino de **semántica ejecutable**: con `resolution_blocks` era posible describir acciones, pero no distinguir con precisión qué era coste, qué era trigger y qué era efecto resolutivo. Esa ambigüedad impedía mapear de forma robusta la salida del LLM a objetos internos del Árbitro.
 
-1. **Ambigüedad semántica:** la relación entre costes, triggers y efectos era implícita. Un bloque con `cost_type: TAP` y `effect_type: DEAL_DAMAGE` no dejaba claro si el tapeo era un coste de la habilidad o un efecto secundario.
-2. **Escalabilidad limitada:** cartas con múltiples habilidades independientes (como Aether Vial, que tiene una triggered y una activated) no podían representarse sin contorsiones semánticas.
-3. **Incompatibilidad con el motor de bloques de construcción:** el Árbitro necesitaba distinguir entre habilidades (objetos de alto nivel con su propio ciclo de vida), efectos (acciones atómicas dentro de una habilidad) y costes (requisitos de activación).
+Las decisiones que consolidaron V1.2 fueron:
 
-**Proceso de diseño.** El nuevo esquema se diseñó en colaboración iterativa entre el investigador (que consultó además con Gemini para validación cruzada) y el asistente. Se debatieron varias estructuras candidatas:
+- Eliminar redundancias (`qualifiers`, `target_qualifiers`, `target_entity`) para evitar colisiones semánticas.
+- Mover `is_optional` al nivel de `effects[]`, donde realmente aplica en reglas MTG (“you may”).
+- Añadir `base_attributes` en raíz para desacoplar atributos base de lógica de habilidades.
+- Fijar la jerarquía `Card -> abilities[] -> (costs/trigger/effects[]) -> target_info/parameters`.
 
-- Se propuso inicialmente un esquema con `qualifiers` y `restrictions` separados en `target_info`. Tras análisis, se determinó que ambos campos eran redundantes: `restrictions` (con `logical_operator`, `types` y `modifiers`) subsumía por completo la funcionalidad de `qualifiers`. Se eliminó `qualifiers`.
-- Se propuso `target_entity` como campo independiente, pero se descartó al verificar que `restrictions.types` ya cubría exactamente la misma funcionalidad de filtrado por tipo de entidad.
-- Se decidió mover `is_optional` del nivel de `ability` al nivel de cada `effect`, porque en MTG la opcionalidad ("you may") aplica a la resolución de un efecto concreto, no a la existencia de la habilidad.
-- Se añadió `base_attributes` como objeto en la raíz (`power`, `toughness`, `loyalty`, `color_indicator`) para que el motor pudiese instanciar las estadísticas base sin recorrer las habilidades.
+Este cambio convirtió el JSON-LD en una **IR (representación intermedia) estable**: suficientemente expresiva para cartas complejas y lo bastante rígida para poder validarse.
 
-**Esquema V1.2 resultante.** La nueva jerarquía quedó definida como:
+#### 8.13. Cierre de huecos operativos: MOVE_ZONE y CREATE_TOKEN
 
-```
-Card (raíz)
-├── name, mana_cost, supertypes[], card_types[], subtypes[]
-├── keywords[]
-├── base_attributes { power, toughness, loyalty, color_indicator }
-├── requires_human_review, ontology_proposal[]
-└── abilities[]
-    ├── ability_order, ability_type, zones_active[], modal_choices
-    ├── costs[] { cost_type, amount, restrictions }
-    ├── trigger { event_type, conditions[] }
-    └── effects[]
-        ├── effect_order, mode_id, is_optional, effect_type
-        ├── target_info { requires_target, target_owner, target_zone, target_count, restrictions }
-        ├── effect_conditions[]
-        └── parameters { amount, duration, chooser, string_value, destination_zone, token_definition }
-```
+Tras validar el esquema con cartas reales y revisión cruzada externa, se detectaron dos huecos que bloqueaban ejecución:
 
-**Impacto.** El esquema V1.2 desambigua completamente la relación entre costes, triggers y efectos. Permite representar cartas con cualquier número de habilidades independientes, cada una con sus propios costes, disparadores y efectos secuenciales. La estructura jerárquica facilita además la instanciación directa en objetos Python por el motor.
+1. En `MOVE_ZONE`, el contrato decía dónde estaba el objetivo, pero no a dónde debía ir.
+2. En `CREATE_TOKEN`, la definición del token quedaba implícita o textual, no estructurada.
 
-#### 8.13. Incorporación de MOVE_ZONE y CREATE_TOKEN como efectos especializados
+Se corrigió con dos decisiones de contrato:
 
-**Motivación.** Durante la validación cruzada con Gemini, se identificaron dos bloqueos operativos que el esquema V1.1 no resolvía:
+- `parameters.destination_zone` pasa a ser obligatorio para `MOVE_ZONE`.
+- `parameters.token_definition` pasa a ser un objeto formal (power, toughness, colors, card_types, subtypes, keywords), prohibiendo usar `string_value` como pseudo-parser.
 
-1. **MOVE_ZONE sin destino.** Cuando el `effect_type` es `MOVE_ZONE` (p.ej. Unsummon: "devuelve la criatura objetivo a la mano de su propietario"), `target_info.target_zone` indica la zona de ORIGEN (donde está la criatura ahora: `BATTLEFIELD`), pero no existía campo para indicar el DESTINO (`HAND`). El motor no sabría a dónde mover la carta.
+El resultado fue eliminar la necesidad de “interpretar texto” en runtime para estas dos mecánicas troncales.
 
-2. **CREATE_TOKEN sin definición estructurada.** Cartas como Raise the Alarm ("Create two 1/1 white Soldier creature tokens") requieren especificar las características del token (poder, resistencia, colores, tipos, subtipos). Si el LLM codificaba estos datos en `string_value` como texto libre ("1/1 white Soldier"), el motor necesitaría un parser adicional para interpretar la cadena, anulando la ventaja de la representación estructurada.
+#### 8.14. Modelado de cantidades dinámicas (COUNT / ATTRIBUTE_REFERENCE) y fin de los monolitos
 
-**Soluciones adoptadas.**
+Uno de los fallos más repetidos del LLM era inventar constantes monolíticas para cálculos (“PLUS_ONE”, “TARMOGOYF_COUNT”, etc.).  
+Eso rompía el objetivo principal del módulo: programar bloques reutilizables, no cartas aisladas.
 
-- Se añadió `parameters.destination_zone` con la semántica: zona de DESTINO a donde se mueve la carta. La regla R4 del prompt obliga a que si `effect_type` es `MOVE_ZONE`, `destination_zone` sea no nulo. `target_info.target_zone` sigue siendo exclusivamente la zona de ORIGEN.
-- Se añadió `parameters.token_definition` como objeto estructurado con campos `power`, `toughness`, `colors[]`, `card_types[]`, `subtypes[]` y `keywords[]`. La regla R5 prohíbe codificar datos de tokens en `string_value` y exige que `token_definition` sea un objeto completo cuando `effect_type` es `CREATE_TOKEN`.
+La solución fue convertir `amount` en campo polimórfico e introducir un objeto de cálculo dinámico con capacidad para:
 
-**Lección.** La validación cruzada con un segundo modelo de lenguaje (Gemini) resultó ser una técnica efectiva de revisión arquitectónica. El modelo detectó lagunas operativas que no habían surgido en la revisión manual del esquema, funcionando como un "segundo par de ojos" automatizado.
+- Contar entidades filtradas (`COUNT` + `query`).
+- Leer atributos de referencias (`ATTRIBUTE_REFERENCE` + `source_ref`/`attribute`).
+- Aplicar aritmética incremental (`offset`) y escalado (`multiplier`).
+- Contar valores únicos por propiedad (`distinct_property`) para casos tipo Tarmogoyf.
 
-#### 8.14. Cálculos dinámicos: el objeto dynamic_amount
+Además, se añadieron reglas gatillo explícitas en el prompt para forzar cuándo abrir `dynamic_amount` y cuándo dejar un entero fijo.  
+Con ello, el cálculo pasó de ser ad-hoc por carta a ser **composición de primitivas semánticas**.
 
-**Problema.** Al traducir cartas con mecánicas dependientes del estado del juego, el LLM generaba constantes monolíticas inventadas:
+#### 8.15. Control de alucinación: few-shot + anti-ejemplos + reglas de no-copia
 
-- Tarmogoyf ("power is equal to the number of card types among cards in all graveyards") → `"amount": "TARMOGOYF_COUNT"`.
-- Aetherflux Reservoir ("...plus 1") → `"amount": "PLUS_ONE"`.
-- Lord of the Pit ("deals damage equal to its power") → `"amount": "POWER_OF_SOURCE"`.
+Con el aumento de complejidad estructural, el zero-shot dejó de ser fiable.  
+La mejora no fue “poner ejemplos sin más”, sino diseñar una tríada:
 
-Estas constantes ad-hoc violan el principio de polimorfismo: cada carta nueva requeriría su propia constante y su propia implementación en Python. Con miles de cartas, el enfoque es inviable.
+1. **Few-shot representativos** (simple, multi-habilidad y tokens).
+2. **Anti-ejemplos INCORRECTO/CORRECTO** para patrones de error frecuentes.
+3. **Reglas de generalización** para impedir copia literal de los ejemplos.
 
-**Diseño adoptado.** Se hizo el campo `amount` polimórfico, aceptando cuatro tipos de valor:
+Los ejemplos elegidos (`Lightning Bolt`, `Aether Vial`, `Raise the Alarm`) no fueron casuales: cubren tres regiones distintas del espacio semántico del esquema.  
+Esto redujo errores estructurales repetitivos (dirección de zonas, monolitos, token en string, target_count escalar), sin sacrificar capacidad de generalizar.
 
-| Tipo | Cuándo usar | Ejemplo |
-|------|------------|---------|
-| `integer` | Valor fijo conocido | `"amount": 3` (Lightning Bolt) |
-| `"X"` | Variable X del coste de maná | `"amount": "X"` |
-| `null` | No aplica | `"amount": null` |
-| `dynamic_amount_object` | Cálculo en tiempo de juego | Ver estructura abajo |
+#### 8.16. Robustez de salida LLM: truncación y JSON malformado
 
-El `dynamic_amount_object` se diseñó con los siguientes campos:
+Al crecer el prompt (esquema + reglas + checklist + ejemplos + anti-ejemplos), aparecieron fallos de infraestructura de salida:
 
-```json
-{
-  "dynamic_calculation": "COUNT | ATTRIBUTE_REFERENCE",
-  "distinct_property": "CARD_TYPES | NAMES | MANA_VALUES | COLORS | null",
-  "multiplier": "integer | null",
-  "offset": "integer | null",
-  "source_ref": "SOURCE | TARGET_1 | CONTROLLER | OPPONENT | null",
-  "attribute": "Power | Toughness | ConvertedManaCost | null",
-  "query": {
-    "target_zone": "BATTLEFIELD | GRAVEYARD | EXILE | ALL_ZONES | null",
-    "target_owner": "CONTROLLER | OPPONENT | ANY | null",
-    "restrictions": { "logical_operator": "...", "types": [...], "modifiers": [...] }
-  }
-}
-```
+- Respuestas truncadas por límite de tokens.
+- JSON con trailing commas.
 
-**Campos clave y su justificación:**
+Se aplicó defensa en dos capas:
 
-- `dynamic_calculation: COUNT` indica que se debe contar objetos filtrados por `query`. Cubre "number of creatures you control", "number of lands in all graveyards", etc.
-- `dynamic_calculation: ATTRIBUTE_REFERENCE` indica que se lee un atributo de una entidad concreta. Cubre "equal to its power", "equal to target's toughness", etc.
-- `offset` resuelve el caso de operaciones aritméticas simples como "+1" o "-2". Tarmogoyf define su toughness como "that number plus 1", lo que se modela como el mismo `COUNT` pero con `offset: 1`.
-- `distinct_property` resuelve el caso de contar valores únicos. Tarmogoyf NO cuenta cartas: cuenta *tipos de carta distintos* entre todas las cartas de todos los cementerios. Esto se modela con `distinct_property: CARD_TYPES` en vez de contar cartas directamente.
-- `multiplier` cubre "twice the number of..." (`multiplier: 2`).
-- `target_owner: ANY` y `target_zone: ALL_ZONES` se introdujeron como valores reservados para cubrir efectos que no pertenecen a un único jugador o zona.
+- Aumento de `max_tokens` y aviso explícito cuando `finish_reason == "length"`.
+- Fallback de parseo con limpieza de comas residuales antes de relanzar `json.loads`.
 
-**Reglas de detección (R14).** Para que el LLM sepa cuándo abrir un `dynamic_amount_object` en vez de usar un entero, se documentaron frases gatillo en el Oracle Text:
+Este ajuste no cambia semántica, pero sí incrementa mucho la **fiabilidad operativa** del pipeline en ejecución real.
 
-- "...equal to the number of..." → `COUNT`
-- "...where X is..." → `COUNT`
-- "...equal to its [power/toughness/mana value]..." → `ATTRIBUTE_REFERENCE`
-- Asteriscos en `base_attributes` (*/*) → `DEFINE_STATS` con `dynamic_calculation`
-- "...plus N" / "...minus N" tras un cálculo → `offset`
+#### 8.17. Verificación determinista post-LLM (`_validar_esquema`)
 
-#### 8.15. Few-shot examples y anti-ejemplos para combatir alucinaciones
+Hasta este punto, la validez dependía casi por completo del prompt y de la auto-disciplina del modelo.  
+Se introdujo entonces una capa formal en Python para verificar estructura y consistencia de constantes.
 
-**Problema.** A pesar de las 14 reglas semánticas del prompt, el LLM seguía cometiendo errores de modelado: inventaba constantes monolíticas, confundía la dirección de `target_zone` en `MOVE_ZONE`, o codificaba tokens como strings en `string_value`. El esquema V1.2 tenía suficiente profundidad de anidamiento (abilities → effects → target_info → restrictions) como para que el LLM se desorientase sin referencias concretas.
+La validación cubre, entre otros:
 
-**Riesgo del few-shot prompting.** Se identificó un riesgo potencial: que el LLM se limitase a copiar literalmente los patrones de los ejemplos sin adaptarlos a cartas nuevas (sesgo de anclaje). Para mitigarlo, se adoptaron tres estrategias:
+- Presencia y tipo de campos obligatorios en raíz, ability y effect.
+- Estructura obligatoria de `parameters` y `target_count` como rango `{min,max}`.
+- Reglas contextuales (`MOVE_ZONE` exige `destination_zone`, `CREATE_TOKEN` exige `token_definition`).
+- Comprobación de constantes contra ontología + reservados.
+- Validación de `keywords` raíz y de `token_definition.keywords`/`abilities`.
 
-1. **Diversidad de patrones:** se seleccionaron 3 ejemplos que cubren patrones estructuralmente distintos:
-   - **Lightning Bolt** (Instant simple): un solo efecto `SPELL` con `DEAL_DAMAGE`, target con `restrictions` OR entre `CREATURE`, `PLAYER` y `PLANESWALKER`. Demuestra el caso más simple.
-   - **Aether Vial** (Artifact con dos habilidades): `TRIGGERED` (upkeep + `ADD_COUNTER`) y `ACTIVATED` (tap + `MOVE_ZONE` + `COMPARISON`). Demuestra múltiples habilidades, condiciones y `destination_zone`.
-   - **Raise the Alarm** (Instant con tokens): `SPELL` con `CREATE_TOKEN` y `token_definition` estructurado. Demuestra la creación de fichas.
+Se mantuvo como validación **no bloqueante** (warnings) para no romper el ciclo HITL, pero añade trazabilidad y rigor experimental.
 
-2. **Anti-ejemplos explícitos:** se añadió una sección `=== ANTI-EJEMPLOS (INCORRECTO vs CORRECTO) ===` con 8 pares que muestran errores frecuentes y su corrección. Esta técnica, utilizada en ingeniería de prompts avanzada, explota la tendencia del LLM a evitar patrones que se le muestran como incorrectos. Los pares cubren:
-   - Constantes monolíticas en `amount` (ej. `COUNT_LANDS_CONTROLLED`).
-   - Referencias a atributos como constantes (ej. `POWER_OF_SOURCE`).
-   - Operaciones matemáticas como constantes (ej. `PLUS_ONE`, `TARMOGOYF_COUNT`).
-   - Tokens como strings en vez de objetos.
-   - Pertenencia en `modifiers` en vez de `target_owner`.
-   - `target_count` como entero en vez de objeto `{min, max}`.
-   - Keywords modeladas como abilities en vez de en `keywords` raíz.
-   - Token sin `keywords` ni `abilities` en `token_definition`.
+#### 8.18. Valores reservados: separación entre sintaxis del motor y ontología de dominio
 
-3. **Reglas explícitas de generalización:** el prompt instruye al LLM a usar los ejemplos como guía de estructura, no como plantilla de constantes, enfatizando que debe verificar cada constante contra la ontología inyectada.
+A medida que el esquema incorporó punteros dinámicos (`COUNT`, `ANY`, `ALL_ZONES`, `TARGET_1`, etc.), emergieron falsos positivos de cuarentena.  
+La causa era conceptual: estos términos no son conocimiento de dominio MTG, sino sintaxis interna de ejecución.
 
-**Impacto.** La combinación de few-shot + anti-ejemplos + reglas redujo significativamente los errores estructurales del LLM, especialmente en el modelado de `dynamic_calculation` y `token_definition`, donde previamente fallaba con alta frecuencia.
+La corrección fue sincronizar dos planos:
 
-#### 8.16. Robustez del parser JSON y gestión de tokens LLM
+- Lista blanca en prompt (regla de reservados).
+- Lista blanca en validador Python (`_RESERVED_VALUES`).
 
-**Problema 1: truncación de respuesta.** Con el esquema V1.2 (significativamente más verboso que el esquema plano original) y los 3 ejemplos few-shot inyectados en el prompt, las respuestas del LLM empezaron a ser truncadas. El modelo generaba JSON válido parcialmente, cortado a mitad de un objeto porque alcanzaba el límite de tokens de salida.
+Esta sincronización fue crítica para evitar que el sistema “intente ontologizar” artefactos internos del motor.
 
-**Solución.** Se duplicó `_MAX_TOKENS` de 4096 a 8192 y se añadió detección explícita de truncación: tras recibir la respuesta de `litellm`, se verifica `choice.finish_reason`. Si es `"length"`, se imprime un warning visible indicando que la respuesta fue truncada y que el JSON puede estar incompleto.
+#### 8.19. Separación explícita: keywords de carta vs habilidades complejas (incluyendo tokens)
 
-**Problema 2: trailing commas.** El LLM generaba JSON con comas finales antes de cierre de arrays u objetos (`[1, 2, 3,]`), que es sintaxis inválida en JSON estricto pero común en la salida de modelos de lenguaje.
+El último ajuste de esta cadena resolvió una confusión de modelado muy frecuente:
 
-**Solución.** Se implementó `_limpiar_trailing_commas()`, una función de limpieza basada en expresiones regulares que elimina comas seguidas de cierre de llave o corchete. Esta función se aplica como fallback: `_extraer_json()` primero intenta `json.loads()` directo, y si falla con `JSONDecodeError`, aplica la limpieza y reintenta el parsing.
+- Las keyword abilities de la carta principal (Flying, Trample, etc.) no deben tratarse como habilidades estructuradas.
+- Los tokens, en cambio, pueden tener keywords y también habilidades complejas.
 
-**Impacto.** Estos dos cambios eliminaron los fallos de parsing que habían aparecido tras la ampliación del prompt, haciendo el pipeline robusto frente a las idiosincrasias del formato de salida del LLM.
+Se formalizó con:
 
-#### 8.17. Validación determinista post-LLM: `_validar_esquema`
+- `keywords` en raíz (convención `["NONE"]` cuando no aplica).
+- `token_definition.abilities[]` además de `token_definition.keywords[]`.
+- Reglas R15/R16, checklist ampliado y anti-ejemplos específicos.
+- Validación Python coherente con el nuevo contrato.
 
-**Contexto.** En la sección 6 de esta memoria se propuso como mejora futura un "validador determinista post-LLM". Esta iteración implementó esa mejora.
-
-**Problema.** La autoridad semántica del sistema residía exclusivamente en el prompt: si el LLM ignoraba una regla o usaba una constante inexistente, la única defensa era la cuarentena (que depende de que el propio LLM se auto-detecte). Esto creaba una dependencia circular: el sistema confiaba en que el LLM validase su propia salida.
-
-**Solución.** Se implementó `_validar_esquema(resultado, diccionario)`, una función Python determinista que verifica la estructura y constantes del JSON-LD contra el esquema V1.2 y la ontología cargada. Las validaciones incluyen:
-
-| Validación | Qué verifica |
-|-----------|-------------|
-| Campos raíz obligatorios | `name`, `card_types`, `abilities` presentes |
-| `keywords` raíz | Presente, es lista, no vacío (`["NONE"]` si no aplica) |
-| `base_attributes` | Presente como objeto |
-| Estructura de abilities | `ability_order`, `ability_type`, `effects` presentes |
-| Estructura de effects | `effect_order`, `effect_type`, `target_info`, `parameters` presentes |
-| `target_count` | Debe ser objeto `{min, max}`, no entero |
-| `parameters` completo | Las 6 claves obligatorias: `amount`, `duration`, `chooser`, `string_value`, `destination_zone`, `token_definition` |
-| MOVE_ZONE | `destination_zone` no nulo |
-| CREATE_TOKEN | `token_definition` no nulo, incluye `keywords` y `abilities` |
-| Constantes ontológicas | Todo `effect_type`, `ability_type`, `event_type`, etc. debe existir en la ontología o ser valor reservado |
-
-**Diseño no bloqueante.** La validación emite warnings pero no detiene el flujo HITL. Esto permite que el investigador vea los errores y decida si la traducción es aceptable con correcciones menores o si requiere re-traducción. La decisión de diseño respeta el principio de que el humano mantiene la autoridad final.
-
-**Impacto.** La autoridad semántica pasó de "prompt-only" a "prompt + verificación formal", alineándose con el rigor académico del TFG. El validador actúa como una red de seguridad que captura errores que el prompt no logra prevenir, sin reemplazar el juicio humano.
-
-#### 8.18. Ampliación de valores reservados y sincronización con el validador
-
-**Problema.** Tras implementar el esquema V1.2 con sus nuevos campos estructurales (`COUNT`, `ATTRIBUTE_REFERENCE`, `ANY`, `ALL_ZONES`, `WHILE_STATIC_ACTIVE`, `TARGET_1`, `TARGET_2`, `PERMANENT`, `WHILE_CONDITION`), el sistema empezó a generar falsos positivos de cuarentena. El LLM usaba correctamente estos valores como instrucciones del motor, pero al no encontrarlos en la ontología OWL, activaba cuarentena y proponía añadirlos como constantes ontológicas.
-
-**Causa raíz.** Los valores estructurales del esquema V1.2 son **punteros dinámicos e instrucciones del motor**, no conceptos estáticos de MTG. `COUNT` no es un efecto ni un trigger: es una instrucción para que el motor calcule una cantidad. No pertenecen a la ontología porque no modelan conocimiento de dominio.
-
-**Solución.** Se actualizó la lista blanca de valores reservados en dos ubicaciones sincronizadas:
-
-1. **En el prompt** (Regla 8 — VALORES RESERVADOS): la lista se amplió para incluir `TARGET_1`, `TARGET_2`, `ANY`, `ALL_ZONES`, `COUNT`, `ATTRIBUTE_REFERENCE`, `PERMANENT`, `UNTIL_END_OF_TURN`, `WHILE_STATIC_ACTIVE`, `WHILE_CONDITION`, `CARD_TYPES`, `NAMES`, `MANA_VALUES`, `COLORS`, `X`, `*`, `AND`, `OR`, `TRUE`, `FALSE` y cualquier entero.
-2. **En Python** (`_RESERVED_VALUES` frozenset): la misma lista, asegurando que `_validar_esquema` no marque estos valores como constantes faltantes.
-
-**Lección.** La introducción de nuevos campos estructurales en el esquema requiere actualizar simultáneamente tres puntos: el esquema del prompt, la regla de valores reservados del prompt y la lista blanca del validador Python. La falta de sincronización entre estos tres puntos genera falsos positivos que degradan la confianza del investigador en el sistema.
-
-#### 8.19. Keywords en raíz y habilidades complejas de tokens
-
-**Problema 1: keywords de la carta principal.** El esquema V1.2 no distinguía entre keyword abilities (Flying, Trample, Haste) y habilidades complejas. Una carta con Flying y una habilidad triggered debía modelar ambas como objetos en `abilities[]`. Esto obligaba al LLM a crear habilidades STATIC artificiales para keywords simples, aumentando la complejidad del JSON y la probabilidad de error.
-
-**Problema 2: tokens con habilidades complejas.** El `token_definition` solo incluía `keywords[]` para habilidades de palabra clave. Sin embargo, existen tokens con habilidades complejas (triggered, activated o static con texto de reglas), como los tokens de Food ("2, T, Sacrifice this artifact: You gain 3 life"). El esquema no podía representar estas habilidades.
-
-**Decisión de convención.** Se consultó al investigador sobre la representación de "sin keywords": se decidió usar `["NONE"]` en vez de un array vacío `[]`, consistente con la convención ya adoptada para `supertypes`. Esto evita ambigüedad entre "no se analizaron los keywords" y "la carta no tiene keywords".
-
-**Soluciones implementadas.**
-
-1. **`keywords` en raíz:** se añadió un array `keywords` justo después de `subtypes` en el esquema raíz. Las keyword abilities de la carta se listan como strings (ej. `["FLYING", "TRAMPLE"]`). Cuando la carta no tiene keywords, se usa `["NONE"]`.
-
-2. **`token_definition.abilities[]`:** se añadió un array `abilities` dentro de `token_definition` con la misma estructura que `abilities[]` de la raíz. Cuando el token no tiene habilidades complejas, se usa `[]`.
-
-3. **Reglas R15 y R16:** se añadieron dos reglas semánticas al prompt:
-   - **R15 (KEYWORDS RAÍZ):** las keyword abilities NO se modelan como objetos en `abilities[]`; se listan en `keywords` raíz. `abilities[]` queda reservado para habilidades con costes, disparadores o efectos estructurados.
-   - **R16 (HABILIDADES DE TOKENS):** los keywords del token van en `token_definition.keywords[]` y las habilidades complejas en `token_definition.abilities[]`.
-
-4. **Checklist ampliado:** se extendió de 8 a 11 puntos de autovalidación, añadiendo verificaciones para `keywords` raíz presente y no vacío, separación correcta entre keywords y abilities, y completitud de `token_definition` (claves `keywords` y `abilities`).
-
-5. **Anti-ejemplos 7 y 8:** se añadieron dos pares INCORRECTO/CORRECTO: keyword modelada como ability STATIC vs. listada en `keywords` raíz, y `token_definition` sin claves `keywords`/`abilities` vs. con ambas.
-
-6. **Validador Python actualizado:** `_validar_esquema` ahora verifica que `keywords` existe en raíz, es lista, y no está vacío; y que en `CREATE_TOKEN`, `token_definition` incluye tanto `keywords` (lista) como `abilities` (lista).
-
-**Impacto.** El JSON generado para cartas con keywords se simplificó significativamente: una carta con Flying y una habilidad activated ahora tiene `"keywords": ["FLYING"]` en raíz y un solo objeto en `abilities[]` para la habilidad activated, en vez de dos objetos en `abilities[]`. Esto reduce la complejidad del JSON y facilita la instanciación en el motor.
+Esta decisión reduce ruido estructural en cartas simples y, al mismo tiempo, amplía cobertura para tokens avanzados.
 
 ---
 
-### 9. Evolución del prompt de sistema
+### 9. Evolución del prompt de sistema (resumen ejecutivo)
 
-El prompt del sistema experimentó una evolución significativa a lo largo de las iteraciones. Se documenta aquí como referencia de ingeniería de prompts aplicada.
+La evolución del prompt fue incremental, guiada por fallos observados en pruebas reales. El patrón fue siempre el mismo:  
+**falla detectada -> regla explícita -> ejemplo/anti-ejemplo -> validación en Python**.
 
 | Versión | Cambio principal | Motivación |
-|---------|-----------------|-----------|
-| V0 (semilla) | Prompt estático con ontología hardcodeada | Validar que el LLM genera JSON-LD correcto |
-| V0.1 | Inyección dinámica de ontología desde JSON | Permitir que la ontología evolucione sin tocar código |
-| V0.2 | Regla de cuarentena (regla 4) | Evitar constantes inventadas en campos principales |
-| V0.3 | Regla de polimorfismo (regla 7) | Evitar constantes monolíticas para condiciones complejas |
-| V0.4 | Estructura COMPARISON con scope | Modelar condiciones como expresiones evaluables |
-| V0.5 | Valores reservados (regla 8) | Evitar falsos positivos de cuarentena con NONE, operadores, etc. |
-| V0.6 | Validación total (regla 9) | Extender la verificación ontológica a todos los campos del JSON-LD |
-| V1.2 | Rediseño completo del esquema con abilities, effects, costs, targets, restricciones | Alinear la estructura JSON-LD con el motor de bloques de construcción del TFG |
-| V1.2.1 | dynamic_amount_object con COUNT, ATTRIBUTE_REFERENCE, offset, distinct_property | Eliminar constantes monolíticas para cálculos dependientes del estado del juego |
-| V1.2.2 | MOVE_ZONE (destination_zone) y CREATE_TOKEN (token_definition) | Resolver bloqueos operativos en efectos de movimiento y creación de fichas |
-| V1.2.3 | Few-shot examples (3 cartas) + anti-ejemplos (8 pares) | Combatir alucinaciones del LLM mediante demostración práctica y prohibición explícita |
-| V1.2.4 | Ampliación de valores reservados (COUNT, ANY, ALL_ZONES, TARGET_1, etc.) | Eliminar falsos positivos de cuarentena con valores estructurales del motor |
-| V1.2.5 | Keywords en raíz + token_definition.abilities[] + reglas R15/R16 | Separar keywords simples de habilidades complejas; soportar tokens con habilidades |
+|---------|------------------|------------|
+| V0 | Prompt estático con ontología semilla | Validar pipeline mínimo LLM -> JSON-LD |
+| V0.1 | Inyección dinámica de ontología | Evitar hardcode y permitir evolución del diccionario |
+| V0.2 | Regla de cuarentena | Frenar invención de constantes |
+| V0.3 | Polimorfismo de condiciones | Evitar bloques monolíticos por carta |
+| V0.4 | COMPARISON con scopes | Hacer evaluables las condiciones en motor |
+| V0.5 | Valores reservados iniciales | Evitar falsas alarmas con sintaxis del motor |
+| V0.6 | Validación total en prompt | Extender verificación a todos los campos |
+| V1.2 | Esquema jerárquico Card/Abilities/Effects | Alinear salida con arquitectura del Árbitro |
+| V1.2.1 | `dynamic_amount_object` | Cubrir cálculos complejos sin nuevas constantes ad-hoc |
+| V1.2.2 | `destination_zone` + `token_definition` | Cerrar bloqueos de MOVE_ZONE/CREATE_TOKEN |
+| V1.2.3 | Few-shot + anti-ejemplos | Reducir errores estructurales repetitivos |
+| V1.2.4 | Reservados ampliados y sincronizados | Eliminar cuarentenas falsas por punteros dinámicos |
+| V1.2.5 | `keywords` raíz + `token_definition.abilities[]` | Separar keywords simples y habilidades complejas |
 
-### 10. Relación de ficheros producidos
+### 10. Relación de ficheros y función en la arquitectura
 
-| Fichero | Propósito |
-|---------|----------|
-| `traduccion/agente_mtg_cli.py` | Script CLI principal: traducción, cuarentena, HITL, re-traducción, validación post-LLM |
-| `traduccion/ontology_store.py` | Sincronización bidireccional OWL ↔ JSON, persistencia atómica |
-| `IA_JSON/ontologia_motor.json` | Diccionario ontológico operativo (derivado del OWL, consumido por el LLM) |
-| `IA_OWL/OWL_tfg.rdf` | Ontología formal en RDF/XML (fuente de verdad, editable en Protégé) |
+| Fichero | Función dentro del módulo |
+|---------|---------------------------|
+| `traduccion/agente_mtg_cli.py` | Núcleo de traducción: prompt dinámico, llamada LLM, parseo robusto, cuarentena, HITL y validación post-LLM |
+| `traduccion/ontology_store.py` | Sincronización OWL <-> JSON, persistencia segura y aplicación de propuestas aceptadas |
+| `IA_JSON/ontologia_motor.json` | Diccionario operativo consumido por el prompt y la validación |
+| `IA_OWL/OWL_tfg.rdf` | Fuente formal de verdad editable en Protégé |
 
-### 11. Resumen de errores, causas y soluciones
+### 11. Errores representativos y resolución aplicada
 
-| # | Error | Causa raíz | Solución |
-|---|-------|-----------|---------|
-| 1 | Sintaxis PowerShell en CMD | `$env:` es exclusivo de PowerShell | Documentar ambas sintaxis en el mensaje de error del script |
-| 2 | Heredoc de Python no funciona en Windows | `python - <<'PY'` es sintaxis Bash | Escribir ficheros directamente en vez de usar heredocs |
-| 3 | OWL exporta diccionario vacío | Código buscaba `owl:NamedIndividual`, OWL usa `rdfs:subClassOf` entre clases | Reescribir extracción con recorrido recursivo de subclases |
-| 4 | Clases OWL no encontradas | Nombres incorrectos (`EffectType` vs `Effect`) | Corregir nombres para coincidir con el OWL real |
-| 5 | Solo se extraían categorías hardcodeadas | Lista fija de categorías padre en el código | Descubrimiento dinámico de clases raíz con `_find_root_classes()` |
-| 6 | LLM no activa cuarentena | Operandos de ejemplo inventados; validación parcial; NONE como constante | Tres correcciones: ejemplos reales, validación total, valores reservados |
-| 7 | Cartas de test no ejercitan cuarentena | Lightning Bolt y Aether Vial completamente cubiertos por la ontología | Añadir Thoughtseize y Path to Exile como casos de prueba |
-| 8 | `TypeError: sequence item 5: expected str instance, tuple found` | Bloque `sec_reservados` generaba una tupla de strings en vez de un string concatenado | Reescribir el literal como una sola cadena con concatenación explícita |
-| 9 | Constantes monolíticas para cálculos (`COUNT_LANDS_CONTROLLED`, `PLUS_ONE`) | LLM no tenía mecanismo para modelar cálculos dinámicos | Diseño de `dynamic_amount_object` con `COUNT`, `ATTRIBUTE_REFERENCE`, `offset`, `distinct_property` |
-| 10 | Falsos positivos de cuarentena con valores estructurales (COUNT, ANY, ALL_ZONES) | Valores del motor no incluidos en la lista blanca de reservados | Ampliación sincronizada de valores reservados en prompt y validador Python |
-| 11 | JSON truncado por límite de tokens | Prompt V1.2 + few-shot excedían capacidad de respuesta a 4096 tokens | Duplicar `_MAX_TOKENS` a 8192 + detección de `finish_reason == "length"` |
-| 12 | JSON con trailing commas | El LLM genera comas finales antes de cierre de arrays/objetos | Función `_limpiar_trailing_commas()` con regex como fallback de parsing |
-| 13 | Ejecución de scripts deshabilitada en PowerShell | Política de ejecución `Restricted` por defecto en Windows | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
+| # | Error observado | Causa raíz | Resolución |
+|---|-----------------|-----------|------------|
+| 1 | Sintaxis `$env:` en CMD | Mezcla de shell syntax | Documentación dual (PowerShell/CMD) en mensajes y guía |
+| 2 | Activación PS1 bloqueada | Política de ejecución de PowerShell | Ajuste de `ExecutionPolicy` o alternativa de ejecución directa |
+| 3 | Diccionario OWL vacío | Supuesto de `NamedIndividual` en lugar de jerarquías de clases | Extracción por `rdfs:subClassOf` recursiva |
+| 4 | Categorías incompletas | Mapeo hardcodeado de raíces OWL | Descubrimiento dinámico de clases raíz |
+| 5 | Cuarentena no salta cuando debería | Ejemplos no ontológicos + validación parcial | Ejemplos corregidos + validación total + reservados |
+| 6 | TypeError al construir prompt | Bloque de string mal concatenado (`tuple`) | Reescritura de literal como string único |
+| 7 | Monolitos en `amount` | Falta de modelo de cálculo dinámico | `dynamic_amount_object` + reglas de activación |
+| 8 | Falsos positivos por `COUNT/ANY/...` | Confusión entre sintaxis del motor y ontología | Reservados ampliados y sincronizados en prompt+Python |
+| 9 | JSON truncado | Límite de tokens insuficiente con prompt largo | Aumento de `max_tokens` + warning por truncación |
+| 10 | JSON inválido por trailing commas | Salida LLM no estrictamente JSON | Limpieza regex + reparse defensivo |
 
-### 12. Observaciones metodológicas para la discusión
+### 12. Conclusiones metodológicas (en clave de TFG)
 
-1. **La ingeniería de prompts es un proceso empírico iterativo.** Cada regla del prompt se añadió como respuesta a un fallo observado del LLM, no como diseño a priori. Esto es consistente con la literatura sobre alineamiento de modelos de lenguaje: las instrucciones deben ser progresivamente más explícitas y exhaustivas para cerrar ambigüedades. El prompt evolucionó de 6 líneas (V0) a más de 1000 líneas (V1.2.5) a lo largo de 15+ iteraciones.
+1. **La calidad no salió de una sola gran decisión, sino de iteraciones cortas con feedback real.**  
+   Cada regla nueva del prompt respondió a un error observado en ejecución, no a diseño especulativo.
 
-2. **La ontología actúa como contrato formal entre LLM y motor.** El patrón de inyectar la ontología completa en el prompt y exigir que toda constante sea verificable contra ella convierte al OWL en un contrato de interfaz: el LLM no puede generar nada que el motor no pueda interpretar. Esto es funcionalmente equivalente a un sistema de tipos estático en tiempo de compilación.
+2. **El contrato semántico real es triple:** ontología (qué existe), prompt (cómo se genera) y validador (qué se acepta).  
+   Si una de esas tres capas queda desalineada, aparece inestabilidad.
 
-3. **El HITL como mecanismo de crecimiento controlado del conocimiento.** El flujo cuarentena → propuesta → revisión humana → persistencia en OWL+JSON implementa un patrón de aprendizaje semi-supervisado donde el humano actúa como oráculo de validación. Cada aceptación amplía permanentemente la cobertura del sistema sin riesgo de contaminación semántica.
+3. **HITL no se usó como “parche manual”, sino como mecanismo de crecimiento controlado del vocabulario.**  
+   La cuarentena permite expandir ontología sin perder trazabilidad ni rigor.
 
-4. **El polimorfismo de condiciones es una decisión de escalabilidad.** Sin el modelo `COMPARISON`, cada carta con una condición nueva requeriría una constante específica y código Python ad-hoc. Con el modelo de operandos atómicos, el motor puede evaluar cualquier comparación como una expresión genérica, reduciendo el problema de O(n cartas) a O(k operandos).
+4. **El objetivo de escalabilidad obligó a prohibir modelados por carta.**  
+   COMPARISON + dynamic_amount + restricciones atómicas sustituyen constantes ad-hoc y reducen deuda técnica futura.
 
-5. **El polimorfismo de cálculos dinámicos extiende la escalabilidad a operaciones aritméticas.** Sin el `dynamic_amount_object`, efectos como "deals damage equal to its power plus 1" requerirían constantes ad-hoc por carta. Con `COUNT`/`ATTRIBUTE_REFERENCE` + `offset` + `distinct_property`, el motor descompone cualquier cálculo en primitivas evaluables. Esto reduce la programación de cartas individuales a la composición de bloques atómicos reutilizables.
+5. **Los ejemplos mejoran mucho la adherencia, pero solo son seguros si van acompañados de anti-ejemplos y validación.**  
+   Esa combinación minimiza sesgo de copia y maximiza consistencia estructural.
 
-6. **La defensa en profundidad mejora la fiabilidad del sistema.** El sistema emplea tres capas de validación: (a) reglas en el prompt para guiar al LLM, (b) anti-ejemplos para prevenir errores frecuentes, y (c) validación determinista post-LLM en Python. Ninguna capa es suficiente por sí sola, pero su combinación reduce significativamente la tasa de errores no detectados. Este patrón es análogo a la defensa en profundidad en seguridad informática.
+6. **Separar keywords de habilidades complejas simplifica el modelo y mejora ejecución.**  
+   Cartas simples generan JSON más limpio y tokens complejos siguen siendo representables.
 
-7. **La separación de keywords y abilities refleja la taxonomía real de MTG.** En las Comprehensive Rules de Magic, las keyword abilities son una categoría distinta de las habilidades activadas, disparadas y estáticas. El esquema V1.2.5 refleja fielmente esta taxonomía al nivel de la representación JSON-LD, facilitando que el motor implemente keywords como modificadores de estado simples (sin coste, trigger ni efecto explícito) y abilities como máquinas de estado completas.
-
-8. **La validación cruzada con múltiples LLMs es una técnica efectiva de revisión arquitectónica.** El uso de Gemini como "segundo revisor" del esquema permitió detectar lagunas operativas (MOVE_ZONE, CREATE_TOKEN) que no habían surgido en la revisión manual. Esta técnica tiene un coste marginal bajo y un retorno alto cuando se aplica a esquemas de datos complejos.
-
-9. **La selección de casos de prueba requiere análisis de cobertura de rutas.** Cartas "simples" (como Lightning Bolt) validan el camino feliz pero no ejercitan cuarentena, validación de constantes ni cálculos dinámicos. Un conjunto de prueba efectivo debe incluir cartas que activen cada rama del sistema: cuarentena (constantes faltantes), cálculos dinámicos (COUNT, ATTRIBUTE_REFERENCE), modales (Choose one), tokens (CREATE_TOKEN), movimiento (MOVE_ZONE) y condiciones (COMPARISON).
