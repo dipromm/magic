@@ -25,7 +25,7 @@ env/
 .idea/
 .DS_Store
 Thumbs.db
-.cursorrules
+.cursorrules.md
 
 # ----------------------------
 # Python cache y build
