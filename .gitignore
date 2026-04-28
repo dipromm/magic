@@ -21,11 +21,12 @@ env/
 # Editores / sistema operativo
 # ----------------------------
 .cursor/
+.cursorrules
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
-.cursorrules.md
+
 
 # ----------------------------
 # Python cache y build
