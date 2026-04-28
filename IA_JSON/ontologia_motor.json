@@ -92,7 +92,8 @@
     "Reach",
     "Trample",
     "Vigilance",
-    "Ward"
+    "Ward",
+    "ADD_KEYWORD"
   ],
   "PhaseandStep": [
     "Beggining_phase",
@@ -121,7 +122,9 @@
     "Cast",
     "Dies",
     "Enter_the_battlefield",
-    "Upkeep_begin"
+    "Upkeep_begin",
+    "ATTACKS",
+    "Leaves_graveyard"
   ],
   "Zones": [
     "Battlefield",

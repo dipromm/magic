@@ -1,0 +1,51 @@
+# Reglas de asistencia para el TFG (estado real del repositorio)
+
+## 1) Fuente de verdad del proyecto
+- Este repositorio evoluciona rápido: usar SIEMPRE como fuente principal la implementación actual del código y la estructura de carpetas.
+- El documento `Idea TFG-5.pdf` se considera contexto conceptual, pero puede contener decisiones desactualizadas.
+- Si hay conflicto entre PDF y código actual, prevalece el código actual.
+
+## 2) Arquitectura actual (resumen operativo)
+- `motor_prueba/`: núcleo ejecutable actual del proyecto.
+  - Implementa el motor simplificado de partidas, entorno RL multiagente (PettingZoo/Gymnasium), entrenamiento PPO, evaluación entre checkpoints y visualización de métricas/red.
+  - Flujo típico: entrenar (`train.py`) -> analizar logs (`analyze_logs.py`) -> visualizar (`visualize_training.py`) -> evaluar (`match_checkpoints.py`) -> pruebas humano vs IA (`play_human_vs_ai.py`).
+- `ingesta_datos/`: scripts de adquisición/normalización de datos externos (principalmente Archidekt; pruebas con EDHREC).
+  - Genera datasets JSON consumibles por el motor PoC (`motor_prueba/deck_loader.py`).
+- `traduccion/`: pipeline semántico Oracle Text -> JSON-LD con LLM (LiteLLM) y revisión HITL.
+  - Orquesta traducción de cartas y validación contra ontología.
+  - Incluye sincronización OWL<->JSON mediante `ontology_store.py`.
+- `IA_OWL/`: ontología formal en RDF/OWL (`OWL_tfg.rdf`), base semántica del módulo de traducción.
+- `IA_JSON/`: diccionario ontológico operativo (`ontologia_motor.json`) usado por traducción/validación.
+
+### Relación entre módulos
+- Estado actual: existen dos líneas de trabajo conectadas de forma parcial:
+  1. Línea semántica (`traduccion/` + `IA_OWL/` + `IA_JSON/`).
+  2. Línea de simulación/RL (`motor_prueba/` + `ingesta_datos/`).
+- Actualmente, el motor PoC se alimenta sobre todo de datasets JSON de ingesta y no ejecuta todavía reglas completas derivadas directamente del JSON-LD de traducción.
+
+## 3) Stack tecnológico actual
+- Lenguaje principal: Python 3.10+.
+- RL/ML: PyTorch, Tianshou (PPO multiagente).
+- Entorno de simulación: PettingZoo + Gymnasium.
+- Cálculo numérico: NumPy.
+- Logging y seguimiento: JSONL + TensorBoard.
+- Visualización: matplotlib (curvas), torchviz/graphviz (opcional para grafo de red).
+- Ontología/semántica: RDF/OWL con rdflib; JSON/JSON-LD como representación estructurada.
+- Traducción asistida por LLM: litellm (endpoint PoliGPT configurable por variables de entorno).
+- Ingesta de datos: requests (Archidekt) y pyedhrec en scripts de prueba.
+
+## 4) Regla estricta antes de cambios de lógica/arquitectura
+- REGLA OBLIGATORIA: antes de modificar la lógica de cualquier módulo o proponer cambios arquitectónicos, debes leer `MEMORIA_TFG.md` completo y alinear la propuesta con su estado más reciente.
+- Si detectas contradicciones entre `MEMORIA_TFG.md` y el código, reporta explícitamente la discrepancia antes de proponer cambios.
+
+## 5) Regla al cerrar tareas complejas
+- Al terminar una tarea compleja (refactor relevante, cambios de comportamiento, decisiones de diseño, nuevo flujo o integración de módulos), debes sugerir explícitamente actualizar `MEMORIA_TFG.md` con:
+  - qué se cambió,
+  - por qué se cambió,
+  - impacto en arquitectura/entrenamiento,
+  - riesgos y siguientes pasos.
+
+## 6) Criterio de trabajo para el asistente
+- Priorizar cambios incrementales y verificables.
+- Evitar suposiciones de arquitectura futura si no están reflejadas en código/memoria.
+- Cuando se hable de arquitectura, describir siempre impacto en estos módulos: `motor_prueba`, `ingesta_datos`, `traduccion`, `IA_OWL`, `IA_JSON`.

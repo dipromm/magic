@@ -114,9 +114,10 @@ def build_system_prompt(ontologia_json: str) -> str:
         '  "@type": "Card",\n'
         '  "name": "<nombre en inglés>",\n'
         '  "mana_cost": "<string exacto o null>",\n'
-        '  "supertypes": ["<LEGENDARY | BASIC | SNOW>"],\n'
+        '  "supertypes": ["<LEGENDARY | BASIC | SNOW | NONE>"],\n'
         '  "card_types": ["<CREATURE | INSTANT | SORCERY | ARTIFACT | ENCHANTMENT | LAND | PLANESWALKER>"],\n'
         '  "subtypes": ["<Human | Wizard | Aura | etc>"],\n'
+        '  "keywords": ["<FLYING | TRAMPLE | DEATHTOUCH | HASTE | VIGILANCE | LIFELINK | FIRST_STRIKE | REACH | MENACE | NONE | etc>"],\n'
         '  "base_attributes": {\n'
         '    "power": "<entero | * | null>",\n'
         '    "toughness": "<entero | * | null>",\n'
@@ -169,7 +170,8 @@ def build_system_prompt(ontologia_json: str) -> str:
         '            "restrictions": {\n'
         '              "logical_operator": "<AND | OR | NONE>",\n'
         '              "types": ["<CREATURE | ARTIFACT | ENCHANTMENT | LAND | PLANESWALKER | PLAYER | SPELL | CARD | PERMANENT>"],\n'
-        '              "modifiers": ["<OTHER | TAPPED | NONBLACK | NONTOKEN | ATTACKING | etc>"]\n'
+        '              "supertypes": ["<LEGENDARY | BASIC | SNOW | NONE>"],\n'
+        '              "modifiers": ["<OTHER | TAPPED | NONBLACK | NONTOKEN | ATTACKING | SUPERTYPE | etc>"]\n'
         "            }\n"
         "          },\n"
         '          "effect_conditions": [\n'
@@ -194,7 +196,8 @@ def build_system_prompt(ontologia_json: str) -> str:
         '              "colors": ["<WHITE | BLUE | BLACK | RED | GREEN>"],\n'
         '              "card_types": ["<CREATURE | ARTIFACT | ENCHANTMENT>"],\n'
         '              "subtypes": ["<Soldier | Spirit | Zombie | Treasure>"],\n'
-        '              "keywords": ["<FLYING | HASTE | LIFELINK | VIGILANCE>"]\n'
+        '              "keywords": ["<FLYING | HASTE | LIFELINK | VIGILANCE>"],\n'
+        '              "abilities": [<objetos ability con misma estructura que abilities[] de la raíz, para habilidades complejas del token (triggered/activated/static). Vacío [] si el token solo tiene keywords>]\n'
         '            } | null  (SOLO para CREATE_TOKEN)\n'
         "          }\n"
         "        }\n"
@@ -304,6 +307,43 @@ def build_system_prompt(ontologia_json: str) -> str:
         "los conceptos. 'Basic', 'Legendary' y 'Snow' van EXCLUSIVAMENTE en "
         "supertypes. 'Land', 'Creature' o 'Artifact' van en card_types. "
         "Búscalos en la ontología en sus categorías respectivas.\n"
+        "\n"
+        "R14. DETECCIÓN DINÁMICA (cuándo abrir dynamic_calculation):\n"
+        "Examina el Oracle Text. Si encuentras alguna de estas estructuras, "
+        "DEBES usar el objeto dynamic_calculation en amount. Si no aparece "
+        "ninguna y el valor es un número fijo (ej. 'deals 3 damage'), usa un "
+        "entero plano.\n"
+        "  Palabras gatillo -> acción:\n"
+        "  a) '...equal to the number of...' -> COUNT\n"
+        "     Ej: 'deals damage equal to the number of Elves you control'\n"
+        "  b) '...where X is...' -> COUNT\n"
+        "     Ej: 'where X is the number of lands you control'\n"
+        "  c) '...equal to its [power/toughness/mana value]...' -> ATTRIBUTE_REFERENCE\n"
+        "     Ej: 'you gain life equal to its toughness'\n"
+        "  d) Asteriscos en base_attributes (*/*) -> la habilidad STATIC que "
+        "define ese asterisco DEBE usar DEFINE_STATS con dynamic_calculation\n"
+        "     Ej: Tarmogoyf tiene */* y su texto define qué significan\n"
+        "  e) '...plus N' o '...minus N' tras un cálculo -> añade offset al "
+        "dynamic_calculation (offset: N o offset: -N)\n"
+        "     Ej: 'toughness is that number plus 1' -> offset: 1\n"
+        "  Si el texto NO contiene ninguna de estas estructuras, usa un entero.\n"
+        "\n"
+        "R15. KEYWORDS RAÍZ: las habilidades que son ÚNICAMENTE una palabra clave "
+        "de Magic (Flying, Trample, Haste, Lifelink, Deathtouch, Vigilance, "
+        "First Strike, Double Strike, Reach, Menace, Hexproof, Indestructible, "
+        "Flash, etc.) NO se modelan como objetos en abilities[]. Se listan como "
+        "strings en el array raíz \"keywords\". El array abilities[] queda "
+        "reservado para habilidades complejas (con costes, disparadores o efectos "
+        "estructurados). Si la carta NO tiene keywords, usa [\"NONE\"] (nunca []).\n"
+        "\n"
+        "R16. HABILIDADES DE TOKENS: cuando un token creado por CREATE_TOKEN tiene "
+        "keyword abilities (ej. Flying, Haste), se listan en "
+        "token_definition.keywords[]. Si el token tiene habilidades complejas "
+        "(triggered, activated o static con texto de reglas), se modelan como "
+        "objetos en token_definition.abilities[] con la misma estructura que "
+        "abilities[] de la raíz. Si el token NO tiene habilidades complejas, "
+        "token_definition.abilities debe ser []. Si el token NO tiene keywords, "
+        "token_definition.keywords debe ser [].\n"
         "=== FIN REGLAS ==="
     )
 
@@ -369,7 +409,7 @@ def build_system_prompt(ontologia_json: str) -> str:
     # ------------------------------------------------------------------
     sec_checklist = (
         "=== CHECKLIST DE AUTOVALIDACIÓN ===\n"
-        "Antes de devolver tu respuesta, verifica internamente estos 8 puntos:\n"
+        "Antes de devolver tu respuesta, verifica internamente estos 11 puntos:\n"
         "1. ¿Todas las constantes que usé existen en la ontología o son reservadas?\n"
         "2. ¿Cada ability tiene ability_order correlativo (1, 2, 3...)?\n"
         "3. ¿Cada effect tiene effect_order correlativo?\n"
@@ -379,6 +419,13 @@ def build_system_prompt(ontologia_json: str) -> str:
         "6. ¿No hay constantes combinadas/monolíticas (ej. DestroyAndGainLife)?\n"
         "7. ¿Si effect_type es MOVE_ZONE, destination_zone NO es null?\n"
         "8. ¿Si effect_type es CREATE_TOKEN, token_definition NO es null?\n"
+        "9. ¿El array raíz \"keywords\" está presente y NO está vacío? "
+        "(Usar [\"NONE\"] si la carta no tiene keyword abilities.)\n"
+        "10. ¿Las keyword abilities de la carta (Flying, Trample, etc.) están en "
+        "\"keywords\" raíz y NO como objetos en abilities[]?\n"
+        "11. ¿Si effect_type es CREATE_TOKEN, token_definition incluye las claves "
+        "\"keywords\" (lista) y \"abilities\" (lista, vacía si no hay habilidades "
+        "complejas del token)?\n"
         "Si algún punto falla, CORRIGE antes de responder.\n"
         "=== FIN CHECKLIST ==="
     )
@@ -397,9 +444,10 @@ def build_system_prompt(ontologia_json: str) -> str:
         '  "@type": "Card",\n'
         '  "name": "Lightning Bolt",\n'
         '  "mana_cost": "{R}",\n'
-        '  "supertypes": [],\n'
+        '  "supertypes": ["NONE"],\n'
         '  "card_types": ["INSTANT"],\n'
         '  "subtypes": [],\n'
+        '  "keywords": ["NONE"],\n'
         '  "base_attributes": {"power": null, "toughness": null, "loyalty": null, "color_indicator": []},\n'
         '  "requires_human_review": false,\n'
         '  "ontology_proposal": [],\n'
@@ -439,9 +487,10 @@ def build_system_prompt(ontologia_json: str) -> str:
         '  "@type": "Card",\n'
         '  "name": "Aether Vial",\n'
         '  "mana_cost": "{1}",\n'
-        '  "supertypes": [],\n'
+        '  "supertypes": ["NONE"],\n'
         '  "card_types": ["ARTIFACT"],\n'
         '  "subtypes": [],\n'
+        '  "keywords": ["NONE"],\n'
         '  "base_attributes": {"power": null, "toughness": null, "loyalty": null, "color_indicator": []},\n'
         '  "requires_human_review": false,\n'
         '  "ontology_proposal": [],\n'
@@ -512,9 +561,10 @@ def build_system_prompt(ontologia_json: str) -> str:
         '  "@type": "Card",\n'
         '  "name": "Raise the Alarm",\n'
         '  "mana_cost": "{1}{W}",\n'
-        '  "supertypes": [],\n'
+        '  "supertypes": ["NONE"],\n'
         '  "card_types": ["INSTANT"],\n'
         '  "subtypes": [],\n'
+        '  "keywords": ["NONE"],\n'
         '  "base_attributes": {"power": null, "toughness": null, "loyalty": null, "color_indicator": []},\n'
         '  "requires_human_review": false,\n'
         '  "ontology_proposal": [],\n'
@@ -550,7 +600,8 @@ def build_system_prompt(ontologia_json: str) -> str:
         '          "colors": ["WHITE"],\n'
         '          "card_types": ["CREATURE"],\n'
         '          "subtypes": ["Soldier"],\n'
-        '          "keywords": []\n'
+        '          "keywords": [],\n'
+        '          "abilities": []\n'
         "        }\n"
         "      }\n"
         "    }]\n"
@@ -628,6 +679,22 @@ def build_system_prompt(ontologia_json: str) -> str:
         "6. target_count como entero:\n"
         '   INCORRECTO: "target_count": 2\n'
         '   CORRECTO:   "target_count": {"min": 2, "max": 2}\n'
+        "\n"
+        "7. Keyword ability modelada como objeto en abilities[]:\n"
+        "   INCORRECTO (carta con Flying):\n"
+        '   "keywords": ["NONE"],\n'
+        '   "abilities": [{"ability_type": "STATIC", "effects": [{"effect_type": "GRANT_KEYWORD", ...}]}]\n'
+        "   CORRECTO:\n"
+        '   "keywords": ["FLYING"],\n'
+        '   "abilities": [... solo habilidades complejas ...]\n'
+        "\n"
+        "8. Token sin keywords ni abilities en token_definition:\n"
+        "   INCORRECTO:\n"
+        '   "token_definition": {"power": 1, "toughness": 1, "colors": ["WHITE"], '
+        '"card_types": ["CREATURE"], "subtypes": ["Soldier"]}\n'
+        "   CORRECTO:\n"
+        '   "token_definition": {"power": 1, "toughness": 1, "colors": ["WHITE"], '
+        '"card_types": ["CREATURE"], "subtypes": ["Soldier"], "keywords": [], "abilities": []}\n'
         "=== FIN ANTI-EJEMPLOS ==="
     )
 
@@ -792,6 +859,14 @@ def _validar_esquema(
         if campo not in resultado:
             errores.append(f"Falta campo obligatorio en raíz: '{campo}'")
 
+    kw_raiz = resultado.get("keywords")
+    if kw_raiz is None:
+        errores.append("Falta 'keywords' en raíz (usar [\"NONE\"] si no hay keyword abilities)")
+    elif not isinstance(kw_raiz, list):
+        errores.append(f"'keywords' en raíz debe ser una lista, no {type(kw_raiz).__name__}")
+    elif len(kw_raiz) == 0:
+        errores.append("'keywords' en raíz no puede estar vacío; usar [\"NONE\"] si no aplica")
+
     base = resultado.get("base_attributes")
     if not isinstance(base, dict):
         errores.append("Falta 'base_attributes' como objeto en raíz")
@@ -863,10 +938,29 @@ def _validar_esquema(
                     errores.append(
                         f"{ep}: MOVE_ZONE requiere destination_zone no nulo"
                     )
-                if et == "CREATE_TOKEN" and not params.get("token_definition"):
-                    errores.append(
-                        f"{ep}: CREATE_TOKEN requiere token_definition no nulo"
-                    )
+                if et == "CREATE_TOKEN":
+                    td = params.get("token_definition")
+                    if not td:
+                        errores.append(
+                            f"{ep}: CREATE_TOKEN requiere token_definition no nulo"
+                        )
+                    elif isinstance(td, dict):
+                        if "keywords" not in td:
+                            errores.append(
+                                f"{ep}: token_definition debe incluir 'keywords' (lista)"
+                            )
+                        elif not isinstance(td["keywords"], list):
+                            errores.append(
+                                f"{ep}: token_definition.keywords debe ser lista"
+                            )
+                        if "abilities" not in td:
+                            errores.append(
+                                f"{ep}: token_definition debe incluir 'abilities' (lista, vacía si no hay habilidades complejas)"
+                            )
+                        elif not isinstance(td["abilities"], list):
+                            errores.append(
+                                f"{ep}: token_definition.abilities debe ser lista"
+                            )
 
     return errores
 
@@ -1124,6 +1218,15 @@ _CARTAS_EJEMPLO: List[Dict[str, str]] = [
             "Nontoken creatures you control are Forest lands in addition to their other types. (They're still affected by summoning sickness.)"
         ),
     },
+    {
+        "nombre": "Teval, the balanced scale",
+        "coste": "{1}{G}{B}{U}",
+        "tipos": "Legendary Creature",
+        "oracle": (
+            "Flying. Whenever Teval attacks, mill three cards. Then you may return a land card from your graveyard to the battlefield tapped."
+            "Whenever one or more cards leave your graveyard, create a 2/2 black Zombie Druid creature token."
+        ),
+    }
     
 ]
 
