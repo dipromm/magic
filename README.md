@@ -1,6 +1,6 @@
 # Motor reducido de Magic para aprendizaje por refuerzo
 
-Prototipo de Trabajo de Fin de Grado: un motor simplificado de *Magic: The Gathering* expuesto como entorno multiagente, con entrenamiento PPO, evaluación reproducible y un pipeline aparte que traduce el texto de las cartas a una representación formal (OWL + JSON-LD).
+Prototipo de RL: un motor simplificado de *Magic: The Gathering* expuesto como entorno multiagente, con entrenamiento PPO, evaluación reproducible y un pipeline aparte que traduce el texto de las cartas a una representación formal (OWL + JSON-LD).
 
 El reglamento completo del juego es demasiado grande para usarlo como primer banco de pruebas. Si un agente no aprende, no se puede saber si falla la red o el motor. Este repositorio fija primero un subconjunto jugable —robar, jugar tierras, invocar criaturas y resolver combate— y construye encima el ciclo completo de experimentación: entrenar, registrar, comparar políticas y revisar el comportamiento a mano.
 
@@ -242,4 +242,4 @@ La traducción y el motor comparten el dominio, no el runtime. El CLI produce y 
 
 ## Autor
 
-Mario Merino Martín. Código del Trabajo de Fin de Grado.
+Mario Merino Martín.
