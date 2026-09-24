@@ -78,11 +78,22 @@ La red es un backbone de dos capas de 128 unidades. El actor sale a 50 acciones 
 
 ---
 
-## Un resultado, con su límite
+## Qué muestra un entreno
 
-En un duelo de 50 partidas con intercambio de asiento, misma máscara y mismo límite de pasos, un checkpoint de recompensa escasa ganó 36 a 14 a uno de recompensa densa, sin partidas truncadas. En este motor y con ese protocolo, optimizar los premios intermedios no produjo la política más competitiva. Hace falta variar semillas, duración y arquitectura antes de tratarlo como un resultado general sobre reward shaping.
+La figura es el run `anchor_curriculum_sparse2`. Una política aprende con PPO contra una copia congelada, las dos cambian de asiento en cada época, y el shaping denso baja en línea recta hasta desaparecer hacia el paso 150 000. Desde ahí la señal ya es solo la terminal.
 
-Los logs, las gráficas y los `.pth` se generan en local y no forman parte del repositorio.
+![Dashboard del entreno ancla con curriculum. Winrate del aprendiz al alza, ancla a la baja, shaping denso hasta el paso 150000.](docs/figuras/anchor_curriculum_sparse2_dashboard.png)
+
+- **Winrate.** Quien aprende pasa de cerca de 0,1–0,2 a cerca de 0,5–0,6, según el asiento. La ancla, con los pesos fijos, baja de cerca de 0,9 hacia 0,5. La curva de quien juega como P0 queda por encima: el orden de turno sigue pesando.
+- **Curriculum.** `dense_shaping_scale` llega a 0 alrededor del paso 150 000. A partir de ese punto los premios intermedios ya no empujan.
+- **Longitud.** Las partidas se alargan y se estabilizan en torno a 150–160 pasos.
+- **Entropía.** Las dos políticas se vuelven más deterministas a lo largo del entreno.
+
+El último punto de varias curvas se separa del tramo anterior. Con un cambio de asiento en cada época, esa cola no cambia la lectura del resto del run.
+
+El otro resultado es un duelo directo, ya sin entrenar: 50 partidas con intercambio de asiento, misma máscara y mismo límite de pasos. El checkpoint de recompensa escasa ganó 36 a 14 al de recompensa densa, sin partidas truncadas. En este motor y con ese protocolo, la política entrenada solo con la señal terminal quedó por delante. Hace falta variar semillas, duración y arquitectura antes de tomarlo como un resultado general sobre reward shaping.
+
+En el repositorio queda esta figura. Los JSONL y los `.pth` se regeneran al entrenar.
 
 ---
 
