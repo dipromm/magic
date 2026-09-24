@@ -1,5 +1,4 @@
-Idea_TFG.pdf
-MEMORIA_TFG.md 
+
 
 # ----------------------------
 # Entornos y dependencias locales
@@ -29,7 +28,6 @@ env/
 .idea/
 .DS_Store
 Thumbs.db
-
 
 # ----------------------------
 # Python cache y build
