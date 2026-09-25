@@ -1,4 +1,5 @@
 # Motor reducido de Magic para aprendizaje por refuerzo
+#[En Desarrollo]
 
 Prototipo de RL: un motor simplificado de *Magic: The Gathering* expuesto como entorno multiagente, con entrenamiento PPO, evaluación reproducible y un pipeline aparte que traduce el texto de las cartas a una representación formal (OWL + JSON-LD).
 
