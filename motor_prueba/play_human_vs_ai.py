@@ -109,6 +109,13 @@ def main() -> None:
     ap.add_argument("--max-episode-steps", type=int, default=500)
     ap.add_argument("--disable-mask", action="store_true")
     ap.add_argument("--dataset-path", type=str, default="")
+    ap.add_argument(
+        "--deck-mode",
+        type=str,
+        choices=("default", "random_stats"),
+        default="default",
+        help="default=osos 2/2; random_stats=criaturas P/T/maná aleatorios 0-10",
+    )
     ap.add_argument("--verbose-env", action="store_true", help="Mensajes del entorno (recompensas RL, etc.)")
     ap.add_argument("--stochastic", action="store_true", help="IA muestrea acciones; por defecto greedy (modo)")
     ap.add_argument(
@@ -152,6 +159,7 @@ def main() -> None:
             dataset_path=dataset,
             reward_mode="dense",
             verbose=args.verbose_env,
+            deck_mode=args.deck_mode,
         )
     else:
         env = MagicEnv(
@@ -159,6 +167,7 @@ def main() -> None:
             log_path=None,
             env_id=2000,
             dataset_path=dataset,
+            deck_mode=args.deck_mode,
             masking_enabled=masking,
             reward_mode="dense",
             max_episode_steps=args.max_episode_steps,

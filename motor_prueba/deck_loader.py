@@ -1,7 +1,8 @@
 import json
+import random
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from cartas import Creature, Land
 
@@ -68,4 +69,34 @@ def build_poc_deck_from_archidekt(deck_obj: dict[str, Any]) -> list[Any]:
             continue
 
     return result
+
+
+def build_random_stats_deck(
+    *,
+    n_lands: int = 20,
+    n_creatures: int = 20,
+    rng: Optional[random.Random] = None,
+) -> list[Any]:
+    """
+    Mazo de prueba: tierras + criaturas con P/T uniformes en 0..10
+    y maná correlacionado con esas stats (también acotado a 0..10).
+
+    Si rng es None, usa el módulo random global (respeta random.seed del env.reset).
+    """
+    def _randint(a: int, b: int) -> int:
+        return rng.randint(a, b) if rng is not None else random.randint(a, b)
+
+    def _uniform(a: float, b: float) -> float:
+        return rng.uniform(a, b) if rng is not None else random.uniform(a, b)
+
+    deck: list[Any] = [Land() for _ in range(n_lands)]
+    for i in range(n_creatures):
+        power = _randint(0, 10)
+        toughness = _randint(0, 10)
+        base = (power + toughness) / 2.0
+        mana = int(round(base + _uniform(-1.5, 1.5)))
+        mana = max(0, min(10, mana))
+        name = f"Rand{i+1} {power}/{toughness}@{mana}"
+        deck.append(Creature(name=name, mana_cost=mana, power=power, toughness=toughness))
+    return deck
 

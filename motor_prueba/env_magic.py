@@ -1,8 +1,15 @@
 import functools
 import numpy as np
 from pettingzoo import AECEnv
-from pettingzoo.utils import agent_selector, wrappers
+from pettingzoo.utils import wrappers
 from gymnasium.spaces import Box, Discrete, Dict
+
+# PettingZoo >=1.25: `from pettingzoo.utils import agent_selector` es el módulo.
+# En versiones antiguas, esa importación devolvía la clase directamente.
+try:
+    from pettingzoo.utils.agent_selector import AgentSelector as agent_selector
+except ImportError:  # pragma: no cover
+    from pettingzoo.utils import agent_selector  # type: ignore
 import random
 from typing import Optional, Any
 
@@ -10,7 +17,11 @@ from motor import Game
 from jugador import Player # Usamos Player normal porque la IA tomará el control
 from entorno_rl import ObservadorRL
 from logging_utils import make_logger
-from deck_loader import load_archidekt_dataset, build_poc_deck_from_archidekt
+from deck_loader import (
+    load_archidekt_dataset,
+    build_poc_deck_from_archidekt,
+    build_random_stats_deck,
+)
 
 class MagicEnv(AECEnv):
     """
@@ -28,6 +39,7 @@ class MagicEnv(AECEnv):
         log_path: Optional[str] = None,
         env_id: int = 0,
         dataset_path: Optional[str] = None,
+        deck_mode: str = "default",
         masking_enabled: bool = True,
         reward_mode: str = "dense",
         max_episode_steps: Optional[int] = None,
@@ -38,6 +50,8 @@ class MagicEnv(AECEnv):
         super().__init__()
         self.env_id = env_id
         self.dataset_path = dataset_path
+        # "default" = 20 tierras + 20 osos 2/2; "random_stats" = tierras + criaturas P/T/maná aleatorios
+        self.deck_mode = (deck_mode or "default").strip().lower()
         self.masking_enabled = masking_enabled
         self.reward_mode = reward_mode
         self.dense_reward_scale = float(dense_reward_scale)
@@ -199,6 +213,12 @@ class MagicEnv(AECEnv):
                 self.motor.setup_game(deck_p0=deck0, deck_p1=deck1)
             else:
                 self.motor.setup_game()
+        elif self.deck_mode == "random_stats":
+            # Un mazo distinto por jugador; el RNG ya quedó fijado si reset(seed=...)
+            self.motor.setup_game(
+                deck_p0=build_random_stats_deck(),
+                deck_p1=build_random_stats_deck(),
+            )
         else:
             self.motor.setup_game()
         

@@ -71,12 +71,14 @@ def make_magic_env(
     dataset_path: str | None,
     reward_mode: str,
     verbose: bool,
+    deck_mode: str = "default",
 ) -> MagicEnv:
     return MagicEnv(
         verbose=verbose,
         log_path=log_path,
         env_id=env_id,
         dataset_path=dataset_path,
+        deck_mode=deck_mode,
         masking_enabled=masking_enabled,
         reward_mode=reward_mode,
         max_episode_steps=max_episode_steps,
@@ -171,6 +173,13 @@ def main() -> None:
     ap.add_argument("--max-episode-steps", type=int, default=500)
     ap.add_argument("--disable-mask", action="store_true")
     ap.add_argument("--dataset-path", type=str, default="")
+    ap.add_argument(
+        "--deck-mode",
+        type=str,
+        choices=("default", "random_stats"),
+        default="default",
+        help="default=osos 2/2; random_stats=criaturas P/T/maná aleatorios 0-10",
+    )
     ap.add_argument("--verbose-env", action="store_true")
     args = ap.parse_args()
 
@@ -213,6 +222,7 @@ def main() -> None:
             dataset_path=dataset,
             reward_mode="dense",
             verbose=args.verbose_env,
+            deck_mode=args.deck_mode,
         )
         ep_seed = int(rng.randint(0, 2**31 - 1))
         winner = play_episode(
