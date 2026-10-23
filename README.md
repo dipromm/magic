@@ -155,6 +155,9 @@ python .\train.py --run-name dense_01 --max-epochs 30 --epoch-steps 5000 --test-
 # Solo señal terminal
 python .\train.py --run-name sparse_01 --reward-mode sparse --max-episode-steps 400
 
+# Self-play con criaturas de fuerza, resistencia y maná aleatorios
+python .\train.py --run-name sparse_random_01 --reward-mode sparse --deck-mode random_stats --seed 0 --max-epochs 30 --epoch-steps 5000 --max-episode-steps 400
+
 # Shaping que se apaga
 python .\train.py --run-name curr_01 --reward-mode curriculum --curriculum-steps 150000
 
@@ -166,9 +169,12 @@ python .\train.py --run-name anchor_01 --anchor-checkpoint .\modelos\sparse_01_p
 
 # 50 partidas entre dos checkpoints, cambiando quién sale
 python .\match_checkpoints.py --p0-ckpt .\modelos\sparse_01_policy.pth --p1-ckpt .\modelos\dense_01_policy.pth --games 50 --swap
+
+# ¿La jugada cambia si se reescriben fuerza y resistencia?
+python .\probe_stat_use.py --ckpt .\modelos\sparse_random_01_policy.pth --baseline .\modelo_magic_sparse_1.pth
 ```
 
-Flags que más cambian el experimento: `--reward-mode {dense,sparse,curriculum}`, `--disable-mask`, `--lr`, `--eps-clip`, `--entropy-coef`, `--seed`, `--max-episode-steps`, `--dataset-path`. Warm-start y ancla no se combinan.
+Flags que más cambian el experimento: `--reward-mode {dense,sparse,curriculum}`, `--deck-mode {default,random_stats}`, `--disable-mask`, `--lr`, `--eps-clip`, `--entropy-coef`, `--seed`, `--max-episode-steps`, `--dataset-path`. Warm-start y ancla no se combinan. `--deck-mode random_stats` no se combina con `--dataset-path`: el dataset tiene prioridad dentro del entorno.
 
 Cada run deja:
 

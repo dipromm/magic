@@ -1,4 +1,4 @@
-# Visualización del entrenamiento y red neuronal (TFG)
+# Visualización del entrenamiento y de la red neuronal
 
 Este directorio incluye utilidades para:
 

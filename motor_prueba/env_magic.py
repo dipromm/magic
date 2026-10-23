@@ -93,7 +93,7 @@ class MagicEnv(AECEnv):
         
         # Guardaremos las acciones legales calculadas en cada paso
         self.current_legal_actions = []
-        # Métrica simple para TFG: cuántas acciones inválidas intentó cada agente
+        # Métrica simple del entrenamiento: cuántas acciones inválidas intentó cada agente
         self.invalid_action_counts = {agent: 0 for agent in self.agents}
         # Métricas de episodio (para visualización)
         self.episode_id = 0

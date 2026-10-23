@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import time
 import argparse
+import random
 from typing import Any, Callable
 from datetime import datetime, timezone
 from pathlib import Path
@@ -235,6 +236,7 @@ def obtener_entorno(
     verbose: bool,
     log_path: str,
     dataset_path: str | None,
+    deck_mode: str,
     masking_enabled: bool,
     reward_mode: str,
     max_episode_steps: int | None,
@@ -248,6 +250,7 @@ def obtener_entorno(
             log_path=log_path,
             env_id=env_id,
             dataset_path=dataset_path,
+            deck_mode=deck_mode,
             masking_enabled=masking_enabled,
             reward_mode=reward_mode,
             max_episode_steps=max_episode_steps,
@@ -330,6 +333,13 @@ if __name__ == '__main__':
     parser.add_argument("--run-name", type=str, default="")
     parser.add_argument("--dataset-path", type=str, default="", help="ruta a dataset Archidekt JSON")
     parser.add_argument("--deck-idx", type=int, default=0, help="índice de mazo dentro del dataset")
+    parser.add_argument(
+        "--deck-mode",
+        type=str,
+        default="default",
+        choices=("default", "random_stats"),
+        help="default=osos 2/2; random_stats=criaturas con fuerza, resistencia y maná aleatorios. No combinar con --dataset-path.",
+    )
     parser.add_argument("--disable-mask", action="store_true")
     parser.add_argument(
         "--reward-mode",
@@ -411,6 +421,8 @@ if __name__ == '__main__':
 
     if args.warm_start and args.anchor_checkpoint:
         parser.error("No uses --warm-start y --anchor-checkpoint a la vez.")
+    if args.dataset_path and args.deck_mode == "random_stats":
+        parser.error("Quita --dataset-path: con dataset el entorno no usa --deck-mode random_stats.")
     if args.reward_mode == "curriculum" and args.curriculum_steps < 1:
         parser.error("--curriculum-steps debe ser >= 1.")
     if args.anchor_swap_epochs < 0:
@@ -418,6 +430,7 @@ if __name__ == '__main__':
 
     torch.manual_seed(int(args.seed))
     np.random.seed(int(args.seed))
+    random.seed(int(args.seed))
 
     run_name = args.run_name or datetime.now().strftime("run_%Y%m%d_%H%M%S")
     log_path = f"logs/{run_name}.jsonl"
@@ -507,6 +520,7 @@ if __name__ == '__main__':
                     verbose=args.verbose_env,
                     log_path=log_path,
                     dataset_path=dataset_path,
+                    deck_mode=args.deck_mode,
                     masking_enabled=masking_enabled,
                     reward_mode=reward_mode,
                     max_episode_steps=args.max_episode_steps,
@@ -526,6 +540,7 @@ if __name__ == '__main__':
                     verbose=args.verbose_env,
                     log_path=log_path,
                     dataset_path=dataset_path,
+                    deck_mode=args.deck_mode,
                     masking_enabled=masking_enabled,
                     reward_mode=reward_mode,
                     max_episode_steps=args.max_episode_steps,
@@ -543,6 +558,7 @@ if __name__ == '__main__':
         verbose=args.verbose_env,
         log_path=log_path,
         dataset_path=dataset_path,
+        deck_mode=args.deck_mode,
         masking_enabled=masking_enabled,
         reward_mode=reward_mode,
         max_episode_steps=args.max_episode_steps,
@@ -724,6 +740,7 @@ if __name__ == '__main__':
                 "gamma": 0.99,
                 "batch_size": args.batch_size,
                 "dataset_path": dataset_path,
+                "deck_mode": args.deck_mode,
                 "duration_s": round(elapsed, 3),
                 "log_jsonl": _path_for_manifest(log_path),
                 "tb_dir": _path_for_manifest(tb_log_dir),
