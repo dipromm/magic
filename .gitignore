@@ -109,3 +109,9 @@ dataset_cartas/
 *.7z
 *.rar
 
+# ----------------------------
+# Godot (caché del editor)
+# ----------------------------
+mesa/.godot/
+mesa/**/*.import
+

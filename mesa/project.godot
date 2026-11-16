@@ -1,0 +1,23 @@
+; Godot 4. La mesa pide el estado a mesa_api.py y no inventa acciones.
+config_version=5
+
+[application]
+
+config/name="Mesa Arena"
+config/description="Mesa del starter Bloomburrow. El motor es motor_prueba/mesa_api.py."
+run/main_scene="res://escenas/Mesa.tscn"
+config/features=PackedStringArray("4.5", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+anti_aliasing/quality/msaa_3d=2
