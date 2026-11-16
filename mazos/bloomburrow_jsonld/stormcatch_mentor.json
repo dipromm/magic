@@ -1,0 +1,80 @@
+{
+  "@context": "https://mtg-engine.example.org/schema/v1",
+  "@type": "Card",
+  "name": "Stormcatch Mentor",
+  "oracle_text": "Haste\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nInstant and sorcery spells you cast cost {1} less to cast.",
+  "mana_cost": "{U}{R}",
+  "supertypes": [
+    "NONE"
+  ],
+  "card_types": [
+    "Creature"
+  ],
+  "subtypes": [
+    "Otter",
+    "Wizard"
+  ],
+  "keywords": [
+    "Haste",
+    "Prowess"
+  ],
+  "base_attributes": {
+    "power": 1,
+    "toughness": 1,
+    "loyalty": null,
+    "color_indicator": []
+  },
+  "requires_human_review": false,
+  "ontology_proposal": [],
+  "abilities": [
+    {
+      "ability_order": 1,
+      "ability_type": "StaticAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [],
+      "trigger": {
+        "event_type": "NONE",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "ReduceManaCost",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "CONTROLLER",
+            "target_zone": "Stack",
+            "target_count": {
+              "min": 0,
+              "max": "*"
+            },
+            "restrictions": {
+              "logical_operator": "OR",
+              "types": [
+                "Instant",
+                "Sorcery"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 1,
+            "duration": "WHILE_STATIC_ACTIVE",
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ]
+    }
+  ]
+}

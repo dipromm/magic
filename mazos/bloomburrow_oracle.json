@@ -1,0 +1,554 @@
+[
+  {
+    "name": "Byrke, Long Ear of the Law",
+    "mana_cost": "{4}{G}{W}",
+    "type_line": "Legendary Creature — Rabbit Soldier",
+    "oracle_text": "Vigilance\nWhen Byrke enters, put a +1/+1 counter on each of up to two target creatures.\nWhenever a creature you control with a +1/+1 counter on it attacks, double the number of +1/+1 counters on it.",
+    "power": "4",
+    "toughness": "4",
+    "keywords": [
+      "Vigilance",
+      "Double"
+    ],
+    "colors": [
+      "G",
+      "W"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Serra Redeemer",
+    "mana_cost": "{3}{W}{W}",
+    "type_line": "Creature — Angel Soldier",
+    "oracle_text": "Flying\nWhenever another creature you control with power 2 or less enters, put two +1/+1 counters on that creature.",
+    "power": "2",
+    "toughness": "4",
+    "keywords": [
+      "Flying"
+    ],
+    "colors": [
+      "W"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Colossification",
+    "mana_cost": "{5}{G}{G}",
+    "type_line": "Enchantment — Aura",
+    "oracle_text": "Enchant creature\nWhen this Aura enters, tap enchanted creature.\nEnchanted creature gets +20/+20.",
+    "power": null,
+    "toughness": null,
+    "keywords": [
+      "Enchant"
+    ],
+    "colors": [
+      "G"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Fecund Greenshell",
+    "mana_cost": "{3}{G}{G}",
+    "type_line": "Creature — Elemental Turtle",
+    "oracle_text": "Reach\nAs long as you control ten or more lands, creatures you control get +2/+2.\nWhenever this creature or another creature you control with toughness greater than its power enters, look at the top card of your library. If it's a land card, you may put it onto the battlefield tapped. Otherwise, put it into your hand.",
+    "power": "4",
+    "toughness": "6",
+    "keywords": [
+      "Reach"
+    ],
+    "colors": [
+      "G"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Finneas, Ace Archer",
+    "mana_cost": "{G}{W}",
+    "type_line": "Legendary Creature — Rabbit Archer",
+    "oracle_text": "Reach, vigilance\nWhenever Finneas attacks, put a +1/+1 counter on each other creature you control that's a token or a Rabbit. Then if creatures you control have total power 10 or greater, draw a card.",
+    "power": "2",
+    "toughness": "2",
+    "keywords": [
+      "Reach",
+      "Vigilance"
+    ],
+    "colors": [
+      "G",
+      "W"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Warren Elder",
+    "mana_cost": "{1}{W}",
+    "type_line": "Creature — Rabbit Cleric",
+    "oracle_text": "{3}{W}: Creatures you control get +1/+1 until end of turn.",
+    "power": "2",
+    "toughness": "2",
+    "keywords": [],
+    "colors": [
+      "W"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Pileated Provisioner",
+    "mana_cost": "{4}{W}",
+    "type_line": "Creature — Bird Scout",
+    "oracle_text": "Flying\nWhen this creature enters, put a +1/+1 counter on target creature you control without flying.",
+    "power": "3",
+    "toughness": "4",
+    "keywords": [
+      "Flying"
+    ],
+    "colors": [
+      "W"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Carrot Cake",
+    "mana_cost": "{1}{W}",
+    "type_line": "Artifact — Food",
+    "oracle_text": "When this artifact enters and when you sacrifice it, create a 1/1 white Rabbit creature token and scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{2}, {T}, Sacrifice this artifact: You gain 3 life.",
+    "power": null,
+    "toughness": null,
+    "keywords": [
+      "Scry"
+    ],
+    "colors": [
+      "W"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Rabbit Response",
+    "mana_cost": "{2}{W}{W}",
+    "type_line": "Instant",
+    "oracle_text": "Creatures you control get +2/+1 until end of turn. If you control a Rabbit, scry 2. (Look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)",
+    "power": null,
+    "toughness": null,
+    "keywords": [
+      "Scry"
+    ],
+    "colors": [
+      "W"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Repel Calamity",
+    "mana_cost": "{1}{W}",
+    "type_line": "Instant",
+    "oracle_text": "Destroy target creature with power or toughness 4 or greater.",
+    "power": null,
+    "toughness": null,
+    "keywords": [],
+    "colors": [
+      "W"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Hop to It",
+    "mana_cost": "{2}{W}",
+    "type_line": "Sorcery",
+    "oracle_text": "Create three 1/1 white Rabbit creature tokens.",
+    "power": null,
+    "toughness": null,
+    "keywords": [],
+    "colors": [
+      "W"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Druid of the Spade",
+    "mana_cost": "{2}{G}",
+    "type_line": "Creature — Rabbit Druid",
+    "oracle_text": "As long as you control a token, this creature gets +2/+0 and has trample.",
+    "power": "2",
+    "toughness": "3",
+    "keywords": [],
+    "colors": [
+      "G"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Treeguard Duo",
+    "mana_cost": "{3}{G}",
+    "type_line": "Creature — Frog Rabbit",
+    "oracle_text": "When this creature enters, until end of turn, target creature you control gains vigilance and gets +X/+X, where X is the number of creatures you control.",
+    "power": "3",
+    "toughness": "4",
+    "keywords": [],
+    "colors": [
+      "G"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Rabid Bite",
+    "mana_cost": "{1}{G}",
+    "type_line": "Sorcery",
+    "oracle_text": "Target creature you control deals damage equal to its power to target creature you don't control.",
+    "power": null,
+    "toughness": null,
+    "keywords": [],
+    "colors": [
+      "G"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Giant Growth",
+    "mana_cost": "{G}",
+    "type_line": "Instant",
+    "oracle_text": "Target creature gets +3/+3 until end of turn.",
+    "power": null,
+    "toughness": null,
+    "keywords": [],
+    "colors": [
+      "G"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Clifftop Lookout",
+    "mana_cost": "{2}{G}",
+    "type_line": "Creature — Frog Scout",
+    "oracle_text": "Reach\nWhen this creature enters, reveal cards from the top of your library until you reveal a land card. Put that card onto the battlefield tapped and the rest on the bottom of your library in a random order.",
+    "power": "1",
+    "toughness": "2",
+    "keywords": [
+      "Reach"
+    ],
+    "colors": [
+      "G"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Burrowguard Mentor",
+    "mana_cost": "{G}{W}",
+    "type_line": "Creature — Rabbit Soldier",
+    "oracle_text": "Trample\nBurrowguard Mentor's power and toughness are each equal to the number of creatures you control.",
+    "power": "*",
+    "toughness": "*",
+    "keywords": [
+      "Trample"
+    ],
+    "colors": [
+      "G",
+      "W"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Blossoming Sands",
+    "mana_cost": "",
+    "type_line": "Land",
+    "oracle_text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {G} or {W}.",
+    "power": null,
+    "toughness": null,
+    "keywords": [],
+    "colors": [],
+    "produced_mana": [
+      "G",
+      "W"
+    ]
+  },
+  {
+    "name": "Plains",
+    "mana_cost": "",
+    "type_line": "Basic Land — Plains",
+    "oracle_text": "({T}: Add {W}.)",
+    "power": null,
+    "toughness": null,
+    "keywords": [],
+    "colors": [],
+    "produced_mana": [
+      "W"
+    ]
+  },
+  {
+    "name": "Forest",
+    "mana_cost": "",
+    "type_line": "Basic Land — Forest",
+    "oracle_text": "({T}: Add {G}.)",
+    "power": null,
+    "toughness": null,
+    "keywords": [],
+    "colors": [],
+    "produced_mana": [
+      "G"
+    ]
+  },
+  {
+    "name": "Bria, Riptide Rogue",
+    "mana_cost": "{2}{U}{R}",
+    "type_line": "Legendary Creature — Otter Rogue",
+    "oracle_text": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nOther creatures you control have prowess. (If a creature has multiple instances of prowess, each triggers separately.)\nWhenever you cast a noncreature spell, target creature you control can't be blocked this turn.",
+    "power": "3",
+    "toughness": "3",
+    "keywords": [
+      "Prowess"
+    ],
+    "colors": [
+      "R",
+      "U"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Mockingbird",
+    "mana_cost": "{X}{U}",
+    "type_line": "Creature — Bird Bard",
+    "oracle_text": "Flying\nYou may have this creature enter as a copy of any creature on the battlefield with mana value less than or equal to the amount of mana spent to cast this creature, except it's a Bird in addition to its other types and it has flying.",
+    "power": "1",
+    "toughness": "1",
+    "keywords": [
+      "Flying"
+    ],
+    "colors": [
+      "U"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Mind Spring",
+    "mana_cost": "{X}{U}{U}",
+    "type_line": "Sorcery",
+    "oracle_text": "Draw X cards.",
+    "power": null,
+    "toughness": null,
+    "keywords": [],
+    "colors": [
+      "U"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Alania, Divergent Storm",
+    "mana_cost": "{3}{U}{R}",
+    "type_line": "Legendary Creature — Otter Wizard",
+    "oracle_text": "Whenever you cast a spell, if it's the first instant spell, the first sorcery spell, or the first Otter spell other than Alania you've cast this turn, you may have target opponent draw a card. If you do, copy that spell. You may choose new targets for the copy.",
+    "power": "3",
+    "toughness": "5",
+    "keywords": [],
+    "colors": [
+      "R",
+      "U"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Sword of Vengeance",
+    "mana_cost": "{3}",
+    "type_line": "Artifact — Equipment",
+    "oracle_text": "Equipped creature gets +2/+0 and has first strike, vigilance, trample, and haste.\nEquip {3}",
+    "power": null,
+    "toughness": null,
+    "keywords": [
+      "Equip"
+    ],
+    "colors": [],
+    "produced_mana": null
+  },
+  {
+    "name": "Bellowing Crier",
+    "mana_cost": "{1}{U}",
+    "type_line": "Creature — Frog Advisor",
+    "oracle_text": "When this creature enters, draw a card, then discard a card.",
+    "power": "2",
+    "toughness": "1",
+    "keywords": [],
+    "colors": [
+      "U"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Thieving Otter",
+    "mana_cost": "{2}{U}",
+    "type_line": "Creature — Otter",
+    "oracle_text": "Whenever this creature deals damage to an opponent, draw a card.",
+    "power": "2",
+    "toughness": "2",
+    "keywords": [],
+    "colors": [
+      "U"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Waterspout Warden",
+    "mana_cost": "{2}{U}",
+    "type_line": "Creature — Frog Soldier",
+    "oracle_text": "Whenever this creature attacks, if another creature entered the battlefield under your control this turn, this creature gains flying until end of turn.",
+    "power": "3",
+    "toughness": "2",
+    "keywords": [],
+    "colors": [
+      "U"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Pearl of Wisdom",
+    "mana_cost": "{2}{U}",
+    "type_line": "Sorcery",
+    "oracle_text": "This spell costs {1} less to cast if you control an Otter.\nDraw two cards.",
+    "power": null,
+    "toughness": null,
+    "keywords": [],
+    "colors": [
+      "U"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Charmed Sleep",
+    "mana_cost": "{1}{U}{U}",
+    "type_line": "Enchantment — Aura",
+    "oracle_text": "Enchant creature\nWhen this Aura enters, tap enchanted creature.\nEnchanted creature doesn't untap during its controller's untap step.",
+    "power": null,
+    "toughness": null,
+    "keywords": [
+      "Enchant"
+    ],
+    "colors": [
+      "U"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Alania's Pathmaker",
+    "mana_cost": "{3}{R}",
+    "type_line": "Creature — Otter Wizard",
+    "oracle_text": "When this creature enters, exile the top card of your library. Until the end of your next turn, you may play that card.",
+    "power": "4",
+    "toughness": "2",
+    "keywords": [],
+    "colors": [
+      "R"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Flame Lash",
+    "mana_cost": "{3}{R}",
+    "type_line": "Instant",
+    "oracle_text": "Flame Lash deals 4 damage to any target.",
+    "power": null,
+    "toughness": null,
+    "keywords": [],
+    "colors": [
+      "R"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Coruscation Mage",
+    "mana_cost": "{1}{R}",
+    "type_line": "Creature — Otter Wizard",
+    "oracle_text": "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nWhenever you cast a noncreature spell, this creature deals 1 damage to each opponent.",
+    "power": "2",
+    "toughness": "2",
+    "keywords": [
+      "Offspring"
+    ],
+    "colors": [
+      "R"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Quaketusk Boar",
+    "mana_cost": "{3}{R}{R}",
+    "type_line": "Creature — Elemental Boar",
+    "oracle_text": "Reach, trample, haste",
+    "power": "5",
+    "toughness": "5",
+    "keywords": [
+      "Reach",
+      "Haste",
+      "Trample"
+    ],
+    "colors": [
+      "R"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Rabid Gnaw",
+    "mana_cost": "{1}{R}",
+    "type_line": "Instant",
+    "oracle_text": "Target creature you control gets +1/+0 until end of turn. Then it deals damage equal to its power to target creature you don't control.",
+    "power": null,
+    "toughness": null,
+    "keywords": [],
+    "colors": [
+      "R"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Stormcatch Mentor",
+    "mana_cost": "{U}{R}",
+    "type_line": "Creature — Otter Wizard",
+    "oracle_text": "Haste\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nInstant and sorcery spells you cast cost {1} less to cast.",
+    "power": "1",
+    "toughness": "1",
+    "keywords": [
+      "Prowess",
+      "Haste"
+    ],
+    "colors": [
+      "R",
+      "U"
+    ],
+    "produced_mana": null
+  },
+  {
+    "name": "Swiftwater Cliffs",
+    "mana_cost": "",
+    "type_line": "Land",
+    "oracle_text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {U} or {R}.",
+    "power": null,
+    "toughness": null,
+    "keywords": [],
+    "colors": [],
+    "produced_mana": [
+      "R",
+      "U"
+    ]
+  },
+  {
+    "name": "Island",
+    "mana_cost": "",
+    "type_line": "Basic Land — Island",
+    "oracle_text": "({T}: Add {U}.)",
+    "power": null,
+    "toughness": null,
+    "keywords": [],
+    "colors": [],
+    "produced_mana": [
+      "U"
+    ]
+  },
+  {
+    "name": "Mountain",
+    "mana_cost": "",
+    "type_line": "Basic Land — Mountain",
+    "oracle_text": "({T}: Add {R}.)",
+    "power": null,
+    "toughness": null,
+    "keywords": [],
+    "colors": [],
+    "produced_mana": [
+      "R"
+    ]
+  }
+]

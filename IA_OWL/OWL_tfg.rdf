@@ -3,522 +3,180 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
 >
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Add_counter">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:comment xml:lang="es">Cuando la habilidad desencadenada "Al comienzo de tu fase de mantenimiento" se resuelve, el controlador de Aether Vial puede colocar un contador de carga (Charge) sobre Aether Vial. Según la regla 704.5g, colocar un contador implica añadir un objeto Counter al permanente, actualizar su lista de contadores y reflejar el nuevo número de contadores en cualquier efecto que dependa de él. No se paga coste de maná ni se requiere ninguna condición adicional más allá de la decisión del jugador.</rdfs:comment>
-    <rdfs:label>charge counter</rdfs:label>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Defense">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counters"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Shuffle">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:comment xml:lang="es">Representa la acción de mezclar aleatoriamente la biblioteca del jugador, alterando el orden de las cartas que contiene.</rdfs:comment>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Status">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Combat_phase">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/PhaseandStep"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Nonland">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Self">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
     <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
+    <rdfs:comment xml:lang="es">El objeto del coste o del efecto es la fuente. Sirve cuando un coste de sacrificar podría, en otras cartas, apuntar a otro permanente.</rdfs:comment>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/ADD_SUBTYPE">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Battlefield">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Zone"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/RemoveCounterCost">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Cost"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/BeginningPhase">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/PhaseAndStep"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CreateCopyToken">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
     <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:comment xml:lang="es">Adds a specified subtype to target permanents. The effect takes a target and adds the given subtype (e.g., Forest) to the permanent's existing subtypes while preserving other types.</rdfs:comment>
+    <rdfs:comment xml:lang="es">Crea amount fichas que son copia de la fuente. token_definition solo lista excepciones, con la misma regla que EnterAsCopy: un valor nulo o una lista vacía copia ese campo; un número sustituye poder o resistencia; una lista con elementos añade subtipos, keywords o habilidades.</rdfs:comment>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Manapool">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Cost">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/GameEntity"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Enter_the_battlefield">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Name">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Trigger_event"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardAttribute"/>
+    <rdfs:comment xml:lang="es">Nombre en inglés del objeto. Compararlo entre dos scopes distingue identidades de carta sin convertir el nombre en una constante.</rdfs:comment>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Put_creature_from_hand">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Revealed">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:comment xml:lang="es">Esta es una habilidad activada cuyo coste es {T}. Al activarse, el jugador puede elegir una carta de criatura en su mano cuyo valor de maná sea exactamente igual al número de contadores de carga presentes en Aether Vial y colocarla directamente en el campo de batalla. La implementación requiere: (1) contar los contadores de tipo Charge en la carta, (2) filtrar las cartas de criatura en la mano del jugador cuyo mana value coincida, (3) permitir al jugador seleccionar una de esas cartas, y (4) mover la carta seleccionada de la zona Hand a la zona Battlefield.</rdfs:comment>
-    <rdfs:label>You may put a creature card with mana value equal to the number of charge counters on Aether Vial from your hand onto the battlefield</rdfs:label>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
+    <rdfs:comment xml:lang="es">Marca temporal de las cartas reveladas por RevealUntil que no son la carta que cumplió la condición. Dura solo hasta el final de la habilidad.</rdfs:comment>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/manaCost">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#DatatypeProperty"/>
-    <rdfs:domain rdf:resource="http://www.tfg.mtg.simulacion/ontology/Card"/>
-    <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/ADD_TYPE">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/ConvertedManaCost">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:comment xml:lang="es">Aplica un efecto que otorga a una entidad objetivo uno o más tipos de carta adicionales (por ejemplo, añadir el subtipo 'Forest' y el tipo 'Land') mientras se cumpla la condición especificada. El efecto no altera otras características y permanece activo mientras la fuente esté en juego.</rdfs:comment>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Loyalty">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counters"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/ATTACKS">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Trigger_event"/>
-    <rdfs:comment xml:lang="es">Evento que ocurre cuando una criatura declara un ataque durante la fase de combate.</rdfs:comment>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Creature">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardType"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Put_onto_battlefield_tapped">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:comment xml:lang="es">Representa la acción de colocar una carta desde una zona (por ejemplo, la biblioteca) al campo de batalla en estado girado (tapped).</rdfs:comment>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardAttribute"/>
+    <rdfs:comment xml:lang="es">Representa el coste de maná convertido de una carta, es decir, el valor numérico total de maná que se necesita para lanzar la carta, sin importar los colores. Se utiliza para comparaciones y efectos que hacen referencia al coste de maná total.</rdfs:comment>
   </rdf:Description>
   <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/name">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#DatatypeProperty"/>
     <rdfs:domain rdf:resource="http://www.tfg.mtg.simulacion/ontology/Card"/>
     <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Charge">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counters"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Declare_attackers">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Combat_phase"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/SET_POWER_TOUGHNESS_DYNAMIC">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:comment xml:lang="es">Define an effect that sets a creature's power and toughness based on a dynamic calculation. The calculation determines the number of distinct card types present among cards in specified zones (e.g., all graveyards). The effect may also apply an offset to toughness (e.g., +1). This effect is evaluated continuously as a static ability.</rdfs:comment>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Triggered_ability">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Ability"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/PlusOne_PlusOne">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counters"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/ConvertedManaCost">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardAtribute"/>
-    <rdfs:comment xml:lang="es">Representa el coste de maná convertido de una carta, es decir, el valor numérico total de maná que se necesita para lanzar la carta, sin importar los colores. Se utiliza para comparaciones y efectos que hacen referencia al coste de maná total.</rdfs:comment>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Static_ability">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Ability"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Lifelink">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Hexproof">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
     <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Combat_damage">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Combat_phase"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/COUNTER">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:comment xml:lang="es">Representa la acción de anular una carta de hechizo en la pila, evitando que su efecto se resuelva. El objetivo debe ser una carta de tipo hechizo (instantáneo o conjuro) y el resultado es que la carta es puesta en el cementerio sin resolverse.</rdfs:comment>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Finality">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counters"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Untap">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Beggining_phase"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CREATE_TOKEN">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:comment xml:lang="es">Representa la acción de generar una o más fichas de criatura en el campo de batalla. El efecto crea fichas con atributos especificados (poder, resistencia, colores, tipos de carta, subtipos y habilidades) y las coloca en la zona de destino indicada.</rdfs:comment>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Discard">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:comment xml:lang="es">Representa el efecto de obligar a un objetivo a mover una carta de su zona de mano al cementerio. Se aplica a un objetivo especificado y no depende de otras condiciones de juego.</rdfs:comment>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Draw">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Beggining_phase"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Indestructible">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Time">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counters"/>
   </rdf:Description>
   <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Power">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardAtribute"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardAttribute"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Stack">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CardSupertype">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Zones"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Draw_card">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Untapped">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Ending_phase">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/PhaseandStep"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Toughness">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardAtribute"/>
   </rdf:Description>
   <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/manaValue">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#DatatypeProperty"/>
     <rdfs:domain rdf:resource="http://www.tfg.mtg.simulacion/ontology/Card"/>
     <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CardType">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Lore">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:comment xml:lang="es">Representa el tipo de una carta (por ejemplo, criatura, tierra, instantáneo, etc.). Se utiliza en comparaciones para determinar si una carta cumple con una restricción de tipo.</rdfs:comment>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counter"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Upkeep_begin">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/UntapStep">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Trigger_event"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/BeginningPhase"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/ManaCost">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardAttribute"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Enchantment">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardType"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/GainLife">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">El jugador indicado gana una cantidad de vidas. amount es un entero o un cálculo dinámico. No destruye, no hace daño y no se niega con pérdida de vidas.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/TriggerEvent">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Stack">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Zone"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/UpkeepBegin">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/TriggerEvent"/>
     <rdfs:comment xml:lang="es">Este disparador ocurre al inicio de la fase de mantenimiento del controlador de la carta. Según la regla 514.1, la fase de mantenimiento es la primera fase del turno después de la fase de enderezar. El disparador debe ser representado como un evento que se activa al comienzo de esa fase y permite ejecutar la acción asociada si el jugador lo elige.</rdfs:comment>
     <rdfs:label>At the beginning of your upkeep</rdfs:label>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/+-X_+-Y">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Cast">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counters"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/TriggerEvent"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Finality">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counter"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Exile">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Zone"/>
+    <rdfs:comment xml:lang="es">Zona de exilio. Sacar una carta hacia esta zona es el efecto MoveZone, con Exile como destino.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CombatPhase">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/PhaseAndStep"/>
   </rdf:Description>
   <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/motivoCuarentena">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#DatatypeProperty"/>
     <rdfs:domain rdf:resource="http://www.tfg.mtg.simulacion/ontology/Card"/>
     <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/DoubleStrike">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Ability">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Flash">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Basic">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardSupertype"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Sacrifice_cost">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Costs"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Remove_counters_cost">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Costs"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Hexproof">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/TAP">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CopySpell">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
     <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:comment xml:lang="es">Gira (tapa) una o más permanentes objetivo, cambiando su estado a TAPED.</rdfs:comment>
+    <rdfs:comment xml:lang="es">Copia el hechizo objetivo, que está en la pila. El controlador de la habilidad puede elegir nuevos objetivos para la copia. Esa elección forma parte de copiar un hechizo y no es otro efecto.</rdfs:comment>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Tap_cost">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/TapCost">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Costs"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Cost"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Discard_cost">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/TriggeredAbility">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Costs"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Ability"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Leaves_graveyard">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Trigger_event"/>
-    <rdfs:comment xml:lang="es">Triggered when one or more cards are moved from a player's graveyard to any other zone.</rdfs:comment>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Lore">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counters"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CardSupertype">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/PhaseAndStep">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Beggining_phase">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Creature">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/PhaseandStep"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardType"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Cleanup">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Ending_phase"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Lose_life">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/EnterTapped">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
     <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:comment xml:lang="es">Representa el efecto de reducir la vida del jugador o permanente objetivo en una cantidad especificada. El valor numérico se indica en los parámetros del efecto.</rdfs:comment>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Vigilance">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Destroy">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Dies">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Trigger_event"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Upkeep">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Beggining_phase"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CardSubtype">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Mana_cost">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Costs"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Pay_life_cost">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Costs"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Nontoken">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/ADD_KEYWORD">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
-    <rdfs:comment xml:lang="es">Adds a keyword ability to the source permanent, granting it the specified keyword for the duration defined.</rdfs:comment>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Card">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Reveal">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:comment xml:lang="es">Representa el efecto de hacer que el objetivo muestre públicamente todas las cartas de una zona especificada (por ejemplo, su mano). No altera el juego más allá de la información revelada.</rdfs:comment>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Deal_damage">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Efecto de reemplazo: este permanente entra al campo de batalla girado. No es un disparo de Tap después de entrar.</rdfs:comment>
   </rdf:Description>
   <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Flying">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
     <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Exile">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Loyalty">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counter"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Look">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
     <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Zones"/>
-    <rdfs:comment xml:lang="es">Representa la acción de mover una carta del juego a la zona de Exilio, removiéndola del campo de batalla y de otras zonas accesibles al jugador.</rdfs:comment>
+    <rdfs:comment xml:lang="es">El controlador mira en privado las primeras amount cartas de la zona indicada, sin revelarlas. Si amount es 1, esa carta queda como resultado del efecto y el efecto siguiente puede nombrarla con PREVIOUS_TARGET.</rdfs:comment>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Planeswalker">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardType"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Enchantment">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardType"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Main_phase">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/PhaseandStep"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Hand">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Zones"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Trample">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Land">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardType"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/conceptosFaltantes">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#DatatypeProperty"/>
-    <rdfs:domain rdf:resource="http://www.tfg.mtg.simulacion/ontology/Card"/>
-    <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CardAtribute">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Color">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardAtribute"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Oil">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counters"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Battlefield">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Zones"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Goaded">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Counters">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/hasCardSubtype">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
-    <rdfs:domain rdf:resource="http://www.tfg.mtg.simulacion/ontology/Card"/>
-    <rdfs:range rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardSubtype"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Effect">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Enchant">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Trigger_event">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/MinusOne_MinusOne">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counters"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Command_zone">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Zones"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Attacking">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Defender">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Protection">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/FirstStrike">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Costs">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Search_library">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CreateToken">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
     <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:comment xml:lang="es">Representa la acción de buscar una carta que cumpla ciertos criterios dentro de la biblioteca del jugador, sin revelar la biblioteca completa.</rdfs:comment>
+    <rdfs:comment xml:lang="es">Representa la acción de generar una o más fichas de criatura en el campo de batalla. El efecto crea fichas con atributos especificados (poder, resistencia, colores, tipos de carta, subtipos y habilidades) y las coloca en la zona de destino indicada.</rdfs:comment>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/oracleText">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#DatatypeProperty"/>
-    <rdfs:domain rdf:resource="http://www.tfg.mtg.simulacion/ontology/Card"/>
-    <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/May">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
-    <rdfs:comment xml:lang="es">Indica que una acción es opcional para el jugador objetivo. Cuando está presente, el jugador puede elegir ejecutar el efecto o no.</rdfs:comment>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Legendary">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardSupertype"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Declare_blockers">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Combat_phase"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Graveyard">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Zones"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Equip">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Tapped">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Stun">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counters"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/hasCardSupertype">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
-    <rdfs:domain rdf:resource="http://www.tfg.mtg.simulacion/ontology/Card"/>
-    <rdfs:range rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardSupertype"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/KeywordAbility">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Instant">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardType"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Sorcery">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardType"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/hasCardType">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
-    <rdfs:domain rdf:resource="http://www.tfg.mtg.simulacion/ontology/Card"/>
-    <rdfs:range rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardType"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/GameEntity">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Goad">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/ModifyToughness">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
     <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Suma amount a la resistencia del objetivo durante duration. amount puede ser negativo. Un bonus +X/+Y son un ModifyPower y un ModifyToughness.</rdfs:comment>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Player">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/GameEntity"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Haste">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/MOVE_ZONE">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/PreventUntap">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
     <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:comment xml:lang="es">Mueve una carta objetivo de su zona actual a otra zona especificada, como devolver un permanente al mano de su propietario.</rdfs:comment>
+    <rdfs:comment xml:lang="es">Mientras duration esté activo, el permanente objetivo no se endereza en el paso de enderezar de su controlador. No lo gira por sí mismo.</rdfs:comment>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Poison">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counters"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Zones">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Ward">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Spell_ability">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Ability"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Artifact">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardType"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/End_step">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Ending_phase"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Menace">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Flash">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
     <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
   </rdf:Description>
@@ -527,42 +185,526 @@
     <rdfs:domain rdf:resource="http://www.tfg.mtg.simulacion/ontology/Card"/>
     <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Activated_ability">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/DiscardCost">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Cost"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/hasCardSubtype">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+    <rdfs:domain rdf:resource="http://www.tfg.mtg.simulacion/ontology/Card"/>
+    <rdfs:range rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardSubtype"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/LeavesGraveyard">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/TriggerEvent"/>
+    <rdfs:comment xml:lang="es">Triggered when one or more cards are moved from a player's graveyard to any other zone.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Tapped">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/ManaPool">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/GameEntity"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Cleanup">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/EndingPhase"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Ward">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Goaded">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/PlusOnePlusOne">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counter"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/SpellAbility">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
     <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Ability"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Other">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
+    <rdfs:comment xml:lang="es">El objeto no es la fuente de la habilidad.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Menace">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Attach">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Anexa la fuente al permanente objetivo. Si la ability lleva implements_keyword Enchant, el objetivo se elige al lanzar el aura y la anexión ocurre una vez al resolverse. Si lleva Equip, es la resolución de la habilidad activada y puede repetirse pagando su coste.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Scry">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">El controlador mira las primeras amount cartas de su biblioteca y puede poner cualquiera de ellas en el fondo, en cualquier orden. El resto vuelve al tope en el orden que elija.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/StaticAbility">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Ability"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Goad">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/AddCounter">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Añade una cantidad de contadores de un tipo ya definido a un permanente. El tipo de contador y la cantidad son parámetros; no forman parte del nombre del efecto.</rdfs:comment>
+    <rdfs:label>Add counter</rdfs:label>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Charge">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counter"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/DoubleStrike">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Equip">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/LoseLife">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Representa el efecto de reducir la vida del jugador o permanente objetivo en una cantidad especificada. El valor numérico se indica en los parámetros del efecto.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Stun">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counter"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Player">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/GameEntity"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/SetPowerToughness">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Define una regla que asigna dinámicamente los valores de poder y resistencia de una criatura basándose en una cantidad calculada, típicamente el número de permanentes que cumplen una condición (por ejemplo, tierras controladas). El efecto actualiza continuamente los atributos power y toughness de la fuente según el cálculo especificado.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CombatDamage">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CombatPhase"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Graveyard">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Zone"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Attacks">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/TriggerEvent"/>
+    <rdfs:comment xml:lang="es">Evento que ocurre cuando una criatura declara un ataque durante la fase de combate.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Toughness">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardAttribute"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Planeswalker">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardType"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Sacrifice">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/TriggerEvent"/>
+    <rdfs:comment xml:lang="es">Un permanente es sacrificado. Con subject null, el evento es que se sacrifica la fuente. No equivale a Dies: destruir la fuente no dispara este evento si no ha sido sacrificada.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Nonland">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Shuffle">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Representa la acción de mezclar aleatoriamente la biblioteca del jugador, alterando el orden de las cartas que contiene.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/DealsDamage">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/TriggerEvent"/>
+    <rdfs:comment xml:lang="es">La fuente inflige daño. subject describe al receptor. Se dispara una vez por cada objeto que recibe daño de la fuente y cumple el filtro.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Legendary">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardSupertype"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Snow">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardSupertype"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/MinusOneMinusOne">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counter"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Reveal">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Representa el efecto de hacer que el objetivo muestre públicamente todas las cartas de una zona especificada (por ejemplo, su mano). No altera el juego más allá de la información revelada.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/EnterAsCopy">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Este permanente entra como copia del objeto objetivo. token_definition solo lista excepciones: poder o resistencia no nulos sustituyen los de la copia; subtypes, keywords y abilities se añaden; una lista vacía o un poder nulo no cambia ese campo. Si el efecto es opcional y se rechaza, el permanente conserva sus características impresas.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CommandZone">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Zone"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CantBeBlocked">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">La criatura objetivo no puede ser bloqueada durante duration. No le otorga una keyword y no impide que ella misma bloquee.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Untapped">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/MainPhase">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/PhaseAndStep"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/PayMana">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Cost"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/PlusXPlusY">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counter"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Basic">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardSupertype"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/DrawCard">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CardAttribute">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Sorcery">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardType"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Destroy">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/hasCardSupertype">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+    <rdfs:domain rdf:resource="http://www.tfg.mtg.simulacion/ontology/Card"/>
+    <rdfs:range rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardSupertype"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CounterSpell">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Representa la acción de anular una carta de hechizo en la pila, evitando que su efecto se resuelva. El objetivo debe ser una carta de tipo hechizo (instantáneo o conjuro) y el resultado es que la carta es puesta en el cementerio sin resolverse.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/RevealUntil">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Revela cartas del tope de la biblioteca hasta revelar una que cumpla restrictions, incluida esa. La carta que cumple es el resultado del efecto. Las demás quedan con el estado Revealed hasta que termine la habilidad, para que un MoveZone posterior las mueva sin volverse a buscar.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/EndStep">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/EndingPhase"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/ReduceManaCost">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Los hechizos que cumplen el objetivo cuestan amount maná genérico menos para ser lanzados. No modifica el texto ni el coste de habilidades activadas. Se aplica mientras se lanza el hechizo, no al resolverse.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/hasCardType">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+    <rdfs:domain rdf:resource="http://www.tfg.mtg.simulacion/ontology/Card"/>
+    <rdfs:range rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardType"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/ManaSpent">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardAttribute"/>
+    <rdfs:comment xml:lang="es">Cantidad total de maná gastada para lanzar este hechizo, incluyendo el valor elegido de X y los costes adicionales. No es el coste de maná impreso.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/ModifyPower">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Suma amount al poder del objetivo durante duration. amount puede ser negativo. No fija el poder: para asignar poder y resistencia al mismo valor sigue existiendo SetPowerToughness.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Defense">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counter"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Haste">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Tap">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Gira (tapa) una o más permanentes objetivo, cambiando su estado a TAPED.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/manaCost">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#DatatypeProperty"/>
+    <rdfs:domain rdf:resource="http://www.tfg.mtg.simulacion/ontology/Card"/>
+    <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/GrantPlay">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">El controlador puede jugar la carta objetivo durante duration, sea tierra o hechizo, respetando el momento en que las reglas permiten jugarla. No la mueve de zona hasta que se juega.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/MoveZone">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Mueve una carta objetivo de su zona actual a otra zona especificada, como devolver un permanente al mano de su propietario.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Prowess">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
+    <rdfs:comment xml:lang="es">Siempre que el controlador lanza un hechizo que no es criatura, esta criatura gana +1/+1 hasta el final del turno. No tiene coste. Se lista en keywords y no se vuelve a escribir como habilidad de la carta. Otorgarla a otras criaturas es AddKeyword con string_value Prowess.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Token">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
+    <rdfs:comment xml:lang="es">El objeto es una ficha. Nontoken sigue siendo la negación.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/MatchingCastCountThisTurn">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardAttribute"/>
+    <rdfs:comment xml:lang="es">Número de hechizos que el jugador del scope ha lanzado este turno, incluido el hechizo del evento, que cumplen el subject del grupo y las comparaciones de ese grupo cuyo objeto comparado es el hechizo. Dentro de condition_groups cada grupo cuenta con su propio filtro. Vale 1 cuando el hechizo actual es el primero que cumple ese filtro.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/DeclareAttackers">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CombatPhase"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Instant">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardType"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Library">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Zone"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Lifelink">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Dies">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/TriggerEvent"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Oil">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counter"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Protection">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Discard">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Representa el efecto de obligar a un objetivo a mover una carta de su zona de mano al cementerio. Se aplica a un objetivo especificado y no depende de otras condiciones de juego.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/DeclareBlockers">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CombatPhase"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Defender">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/ActivatedAbility">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Ability"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Indestructible">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/AddType">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Aplica un efecto que otorga a una entidad objetivo uno o más tipos de carta adicionales (por ejemplo, añadir el subtipo 'Forest' y el tipo 'Land') mientras se cumpla la condición especificada. El efecto no altera otras características y permanece activo mientras la fuente esté en juego.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Noncreature">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
+    <rdfs:comment xml:lang="es">El objeto no tiene el tipo de carta Creature.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/OptionalPayMana">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Cost"/>
+    <rdfs:comment xml:lang="es">Coste adicional de maná que se puede pagar al lanzar el hechizo. amount es el coste entre llaves. Si se paga, OptionalCostPaid de ese objeto pasa a 1. Si no se paga, el hechizo se lanza igual y el atributo queda en 0.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/EndingPhase">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/PhaseAndStep"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Counter">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/AddMana">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Añade amount maná del color string_value (WHITE, BLUE, BLACK, RED o GREEN) a la reserva del jugador target. Una elección entre colores son modos distintos de este mismo efecto, no una clase nueva.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/DrawStep">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/BeginningPhase"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/oracleText">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#DatatypeProperty"/>
+    <rdfs:domain rdf:resource="http://www.tfg.mtg.simulacion/ontology/Card"/>
+    <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
   </rdf:Description>
   <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Blocking">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
     <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/SET_POWER_TOUGHNESS">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Offspring">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
+    <rdfs:comment xml:lang="es">Coste adicional opcional de maná al lanzar la criatura. El importe va en OptionalPayMana, no en el nombre de la keyword. Si se paga, al entrar crea una ficha copia 1/1 mediante CreateCopyToken. Las abilities que lo implementan llevan implements_keyword Offspring; el motor no añade el recordatorio otra vez.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/EnteredThisTurn">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
+    <rdfs:comment xml:lang="es">El permanente entró al campo de batalla en este turno.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Ontology"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/EnterTheBattlefield">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/TriggerEvent"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/OptionalCostPaid">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardAttribute"/>
+    <rdfs:comment xml:lang="es">1 si al lanzar este objeto se pagó su OptionalPayMana; 0 en caso contrario.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/SearchLibrary">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
     <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
-    <rdfs:comment xml:lang="es">Define una regla que asigna dinámicamente los valores de poder y resistencia de una criatura basándose en una cantidad calculada, típicamente el número de permanentes que cumplen una condición (por ejemplo, tierras controladas). El efecto actualiza continuamente los atributos power y toughness de la fuente según el cálculo especificado.</rdfs:comment>
+    <rdfs:comment xml:lang="es">Representa la acción de buscar una carta que cumpla ciertos criterios dentro de la biblioteca del jugador, sin revelar la biblioteca completa.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Poison">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counter"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Time">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Counter"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Upkeep">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/BeginningPhase"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/PayLife">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Cost"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/KeywordAbility">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/FirstStrike">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/DealDamage">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Attacking">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/GameEntity">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CardType">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:comment xml:lang="es">Representa el tipo de una carta (por ejemplo, criatura, tierra, instantáneo, etc.). Se utiliza en comparaciones para determinar si una carta cumple con una restricción de tipo.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Enchant">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Card">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/AddKeyword">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Adds a keyword ability to the source permanent, granting it the specified keyword for the duration defined.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Hand">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Zone"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Land">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardType"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Artifact">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardType"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/CardSubtype">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/AddSubtype">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Effect"/>
+    <rdfs:comment xml:lang="es">Adds a specified subtype to target permanents. The effect takes a target and adds the given subtype (e.g., Forest) to the permanent's existing subtypes while preserving other types.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/TotalPower">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardAttribute"/>
+    <rdfs:comment xml:lang="es">Suma del poder actual de los objetos que describe query en la misma comparación. Se evalúa en el momento de resolver el efecto.</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Status">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
   </rdf:Description>
   <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Reach">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
     <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Ability">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Effect">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/PhaseandStep">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Zone">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/ManaCost">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardAtribute"/>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/conceptosFaltantes">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#DatatypeProperty"/>
+    <rdfs:domain rdf:resource="http://www.tfg.mtg.simulacion/ontology/Card"/>
+    <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Library">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Nontoken">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Zones"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Status"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Cast">
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/SacrificeCost">
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
-    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Trigger_event"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/Cost"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/">
-    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Ontology"/>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Color">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/CardAttribute"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Trample">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.tfg.mtg.simulacion/ontology/Vigilance">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:subClassOf rdf:resource="http://www.tfg.mtg.simulacion/ontology/KeywordAbility"/>
   </rdf:Description>
 </rdf:RDF>

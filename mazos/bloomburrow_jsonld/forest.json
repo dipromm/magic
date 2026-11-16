@@ -1,0 +1,89 @@
+{
+  "@context": "https://mtg-engine.example.org/schema/v1",
+  "@type": "Card",
+  "name": "Forest",
+  "oracle_text": "({T}: Add {G}.)",
+  "mana_cost": null,
+  "supertypes": [
+    "Basic"
+  ],
+  "card_types": [
+    "Land"
+  ],
+  "subtypes": [
+    "Forest"
+  ],
+  "keywords": [
+    "NONE"
+  ],
+  "base_attributes": {
+    "power": null,
+    "toughness": null,
+    "loyalty": null,
+    "color_indicator": []
+  },
+  "requires_human_review": false,
+  "ontology_proposal": [],
+  "abilities": [
+    {
+      "ability_order": 1,
+      "ability_type": "ActivatedAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [
+        {
+          "cost_type": "TapCost",
+          "amount": null,
+          "restrictions": {
+            "logical_operator": "NONE",
+            "types": [],
+            "subtypes": [],
+            "supertypes": [],
+            "modifiers": []
+          }
+        }
+      ],
+      "trigger": {
+        "event_type": "NONE",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "AddMana",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "CONTROLLER",
+            "target_zone": null,
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Player"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 1,
+            "duration": null,
+            "chooser": "CONTROLLER",
+            "string_value": "GREEN",
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ]
+    }
+  ]
+}

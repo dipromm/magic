@@ -1,0 +1,151 @@
+{
+  "@context": "https://mtg-engine.example.org/schema/v1",
+  "@type": "Card",
+  "name": "Druid of the Spade",
+  "oracle_text": "As long as you control a token, this creature gets +2/+0 and has trample.",
+  "mana_cost": "{2}{G}",
+  "supertypes": [
+    "NONE"
+  ],
+  "card_types": [
+    "Creature"
+  ],
+  "subtypes": [
+    "Rabbit",
+    "Druid"
+  ],
+  "keywords": [
+    "NONE"
+  ],
+  "base_attributes": {
+    "power": 2,
+    "toughness": 3,
+    "loyalty": null,
+    "color_indicator": []
+  },
+  "requires_human_review": false,
+  "ontology_proposal": [],
+  "abilities": [
+    {
+      "ability_order": 1,
+      "ability_type": "StaticAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [],
+      "trigger": {
+        "event_type": "NONE",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "ModifyPower",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "SOURCE",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "NONE",
+              "types": [],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [
+            {
+              "condition_type": "COMPARISON",
+              "left_operand": "COUNT",
+              "left_scope": "CONTROLLER",
+              "operator": "GREATER_OR_EQUAL",
+              "right_operand": 1,
+              "right_scope": null,
+              "query": {
+                "target_zone": "Battlefield",
+                "target_owner": "CONTROLLER",
+                "restrictions": {
+                  "logical_operator": "AND",
+                  "types": [],
+                  "subtypes": [],
+                  "supertypes": [],
+                  "modifiers": [
+                    "Token"
+                  ]
+                }
+              }
+            }
+          ],
+          "parameters": {
+            "amount": 2,
+            "duration": "WHILE_STATIC_ACTIVE",
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        },
+        {
+          "effect_order": 2,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "AddKeyword",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "SOURCE",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "NONE",
+              "types": [],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [
+            {
+              "condition_type": "COMPARISON",
+              "left_operand": "COUNT",
+              "left_scope": "CONTROLLER",
+              "operator": "GREATER_OR_EQUAL",
+              "right_operand": 1,
+              "right_scope": null,
+              "query": {
+                "target_zone": "Battlefield",
+                "target_owner": "CONTROLLER",
+                "restrictions": {
+                  "logical_operator": "AND",
+                  "types": [],
+                  "subtypes": [],
+                  "supertypes": [],
+                  "modifiers": [
+                    "Token"
+                  ]
+                }
+              }
+            }
+          ],
+          "parameters": {
+            "amount": null,
+            "duration": "WHILE_STATIC_ACTIVE",
+            "chooser": null,
+            "string_value": "Trample",
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,270 @@
+{
+  "@context": "https://mtg-engine.example.org/schema/v1",
+  "@type": "Card",
+  "name": "Sword of Vengeance",
+  "oracle_text": "Equipped creature gets +2/+0 and has first strike, vigilance, trample, and haste.\nEquip {3}",
+  "mana_cost": "{3}",
+  "supertypes": [
+    "NONE"
+  ],
+  "card_types": [
+    "Artifact"
+  ],
+  "subtypes": [
+    "Equipment"
+  ],
+  "keywords": [
+    "Equip"
+  ],
+  "base_attributes": {
+    "power": null,
+    "toughness": null,
+    "loyalty": null,
+    "color_indicator": []
+  },
+  "requires_human_review": false,
+  "ontology_proposal": [],
+  "abilities": [
+    {
+      "ability_order": 1,
+      "ability_type": "StaticAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [],
+      "trigger": {
+        "event_type": "NONE",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "ModifyPower",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "ATTACHED",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 0,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Creature"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 2,
+            "duration": "WHILE_STATIC_ACTIVE",
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        },
+        {
+          "effect_order": 2,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "AddKeyword",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "ATTACHED",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 0,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Creature"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": null,
+            "duration": "WHILE_STATIC_ACTIVE",
+            "chooser": null,
+            "string_value": "FirstStrike",
+            "destination_zone": null,
+            "token_definition": null
+          }
+        },
+        {
+          "effect_order": 3,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "AddKeyword",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "ATTACHED",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 0,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Creature"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": null,
+            "duration": "WHILE_STATIC_ACTIVE",
+            "chooser": null,
+            "string_value": "Vigilance",
+            "destination_zone": null,
+            "token_definition": null
+          }
+        },
+        {
+          "effect_order": 4,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "AddKeyword",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "ATTACHED",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 0,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Creature"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": null,
+            "duration": "WHILE_STATIC_ACTIVE",
+            "chooser": null,
+            "string_value": "Trample",
+            "destination_zone": null,
+            "token_definition": null
+          }
+        },
+        {
+          "effect_order": 5,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "AddKeyword",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "ATTACHED",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 0,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Creature"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": null,
+            "duration": "WHILE_STATIC_ACTIVE",
+            "chooser": null,
+            "string_value": "Haste",
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ]
+    },
+    {
+      "ability_order": 2,
+      "ability_type": "ActivatedAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [
+        {
+          "cost_type": "PayMana",
+          "amount": "{3}",
+          "restrictions": {
+            "logical_operator": "NONE",
+            "types": [],
+            "subtypes": [],
+            "supertypes": [],
+            "modifiers": []
+          }
+        }
+      ],
+      "trigger": {
+        "event_type": "NONE",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "Attach",
+          "target_info": {
+            "requires_target": true,
+            "target_owner": "CONTROLLER",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Creature"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": null,
+            "duration": "PERMANENT",
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ],
+      "implements_keyword": "Equip"
+    }
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "@context": "https://mtg-engine.example.org/schema/v1",
+  "@type": "Card",
+  "name": "Pearl of Wisdom",
+  "oracle_text": "This spell costs {1} less to cast if you control an Otter.\nDraw two cards.",
+  "mana_cost": "{2}{U}",
+  "supertypes": [
+    "NONE"
+  ],
+  "card_types": [
+    "Sorcery"
+  ],
+  "subtypes": [],
+  "keywords": [
+    "NONE"
+  ],
+  "base_attributes": {
+    "power": null,
+    "toughness": null,
+    "loyalty": null,
+    "color_indicator": []
+  },
+  "requires_human_review": false,
+  "ontology_proposal": [],
+  "abilities": [
+    {
+      "ability_order": 1,
+      "ability_type": "StaticAbility",
+      "zones_active": [
+        "Hand",
+        "Stack"
+      ],
+      "modal_choices": null,
+      "costs": [],
+      "trigger": {
+        "event_type": "NONE",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "ReduceManaCost",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "SOURCE",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "NONE",
+              "types": [],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [
+            {
+              "condition_type": "COMPARISON",
+              "left_operand": "COUNT",
+              "left_scope": "CONTROLLER",
+              "operator": "GREATER_OR_EQUAL",
+              "right_operand": 1,
+              "right_scope": null,
+              "query": {
+                "target_zone": "Battlefield",
+                "target_owner": "CONTROLLER",
+                "restrictions": {
+                  "logical_operator": "AND",
+                  "types": [
+                    "Creature"
+                  ],
+                  "subtypes": [
+                    "Otter"
+                  ],
+                  "supertypes": [],
+                  "modifiers": []
+                }
+              }
+            }
+          ],
+          "parameters": {
+            "amount": 1,
+            "duration": "WHILE_STATIC_ACTIVE",
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ]
+    },
+    {
+      "ability_order": 2,
+      "ability_type": "SpellAbility",
+      "zones_active": [
+        "Stack"
+      ],
+      "modal_choices": null,
+      "costs": [
+        {
+          "cost_type": "PayMana",
+          "amount": "{2}{U}",
+          "restrictions": {
+            "logical_operator": "NONE",
+            "types": [],
+            "subtypes": [],
+            "supertypes": [],
+            "modifiers": []
+          }
+        }
+      ],
+      "trigger": {
+        "event_type": "NONE",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "DrawCard",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "CONTROLLER",
+            "target_zone": null,
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Player"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 2,
+            "duration": null,
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ]
+    }
+  ]
+}

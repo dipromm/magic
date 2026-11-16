@@ -1,0 +1,182 @@
+{
+  "@context": "https://mtg-engine.example.org/schema/v1",
+  "@type": "Card",
+  "name": "Coruscation Mage",
+  "oracle_text": "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nWhenever you cast a noncreature spell, this creature deals 1 damage to each opponent.",
+  "mana_cost": "{1}{R}",
+  "supertypes": [
+    "NONE"
+  ],
+  "card_types": [
+    "Creature"
+  ],
+  "subtypes": [
+    "Otter",
+    "Wizard"
+  ],
+  "keywords": [
+    "Offspring"
+  ],
+  "base_attributes": {
+    "power": 2,
+    "toughness": 2,
+    "loyalty": null,
+    "color_indicator": []
+  },
+  "requires_human_review": false,
+  "ontology_proposal": [],
+  "abilities": [
+    {
+      "ability_order": 1,
+      "ability_type": "StaticAbility",
+      "zones_active": [
+        "Hand"
+      ],
+      "modal_choices": null,
+      "costs": [
+        {
+          "cost_type": "OptionalPayMana",
+          "amount": "{2}",
+          "restrictions": {
+            "logical_operator": "NONE",
+            "types": [],
+            "subtypes": [],
+            "supertypes": [],
+            "modifiers": []
+          }
+        }
+      ],
+      "trigger": {
+        "event_type": "NONE",
+        "conditions": []
+      },
+      "effects": [],
+      "implements_keyword": "Offspring"
+    },
+    {
+      "ability_order": 2,
+      "ability_type": "TriggeredAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [],
+      "trigger": {
+        "event_type": "EnterTheBattlefield",
+        "conditions": [
+          {
+            "condition_type": "COMPARISON",
+            "left_operand": "OptionalCostPaid",
+            "left_scope": "SOURCE",
+            "operator": "EQUALS",
+            "right_operand": 1,
+            "right_scope": null
+          }
+        ]
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "CreateCopyToken",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "CONTROLLER",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "NONE",
+              "types": [],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 1,
+            "duration": null,
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": {
+              "power": 1,
+              "toughness": 1,
+              "colors": [],
+              "card_types": [],
+              "subtypes": [],
+              "keywords": [],
+              "abilities": []
+            }
+          }
+        }
+      ],
+      "implements_keyword": "Offspring"
+    },
+    {
+      "ability_order": 3,
+      "ability_type": "TriggeredAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [],
+      "trigger": {
+        "event_type": "Cast",
+        "conditions": [],
+        "subject": {
+          "target_owner": "CONTROLLER",
+          "target_zone": "Stack",
+          "restrictions": {
+            "logical_operator": "AND",
+            "types": [],
+            "subtypes": [],
+            "supertypes": [],
+            "modifiers": [
+              "Noncreature"
+            ]
+          }
+        }
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "DealDamage",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "OPPONENT",
+            "target_zone": null,
+            "target_count": {
+              "min": 0,
+              "max": "*"
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Player"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 1,
+            "duration": null,
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ]
+    }
+  ]
+}

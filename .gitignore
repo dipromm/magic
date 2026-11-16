@@ -57,6 +57,7 @@ pip-wheel-metadata/
 *.jsonl
 *.json
 !IA_JSON/**/*.json
+!mazos/**/*.json
 logs/
 **/logs/
 resultados/
