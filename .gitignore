@@ -58,6 +58,7 @@ pip-wheel-metadata/
 *.json
 !IA_JSON/**/*.json
 !mazos/**/*.json
+!mesa/cartas/_fichas.json
 logs/
 **/logs/
 resultados/
@@ -108,4 +109,10 @@ dataset_cartas/
 *.tgz
 *.7z
 *.rar
+
+# ----------------------------
+# Godot (caché del editor)
+# ----------------------------
+mesa/.godot/
+mesa/**/*.import
 
