@@ -60,6 +60,7 @@ def test_puente_obs_124() -> None:
 
 
 def test_starter_fichas() -> None:
+    assert OBS_DIM == 198679, OBS_DIM
     env = MagicStarterEnv(verbose=False, max_episode_steps=80)
     env.reset(seed=2)
     raw = env.observe(env.agent_selection)
@@ -110,25 +111,28 @@ def test_greenshell_reach_y_condicion() -> None:
 def test_accion_apunta_hueco() -> None:
     env = MagicStarterEnv(verbose=False, max_episode_steps=40)
     env.reset(seed=3)
-    agent = env.agent_selection
-    raw = env.observe(agent)
-    obs = raw["observation"]
-    slots, mapa = construir_slots(env.adaptador, 0 if agent == "player_0" else 1)
-    legales = env.current_legal_actions
-    base = N_SLOTS * FICHA_DIM + GLOBAL_DIM
-    for i, a in enumerate(legales[:N_ACTIONS]):
-        if a.get("tipo") != "jugar_carta":
-            continue
-        oid = a["carta_id"]
-        block = obs[base + i * ACTION_BLOCK_DIM: base + (i + 1) * ACTION_BLOCK_DIM]
-        idx = int(block[-2])
-        assert oid in mapa
-        assert idx == mapa[oid]
-        print("ok test_accion_apunta_hueco")
-        return
-    # si en seed 3 no hay jugar_carta, forzar con mano
-    print("ok test_accion_apunta_hueco (sin jugar_carta en el paso; slots ok)")
-    assert len(slots) == N_SLOTS
+    for _ in range(24):
+        agent = env.agent_selection
+        if env.terminations.get(agent) or env.truncations.get(agent):
+            break
+        raw = env.observe(agent)
+        obs = raw["observation"]
+        _slots, mapa = construir_slots(env.adaptador, 0 if agent == "player_0" else 1)
+        legales = env.current_legal_actions
+        base = N_SLOTS * FICHA_DIM + GLOBAL_DIM
+        for i, a in enumerate(legales[:N_ACTIONS]):
+            if a.get("tipo") != "jugar_carta":
+                continue
+            oid = a["carta_id"]
+            block = obs[base + i * ACTION_BLOCK_DIM: base + (i + 1) * ACTION_BLOCK_DIM]
+            idx = int(block[-2])
+            assert oid in mapa
+            assert idx == mapa[oid]
+            print("ok test_accion_apunta_hueco")
+            return
+        mask = np.asarray(raw["action_mask"])
+        env.step(int(np.flatnonzero(mask)[0]))
+    raise AssertionError("no apareció jugar_carta tras el mulligan")
 
 
 def test_forward_red() -> None:
@@ -155,6 +159,36 @@ def test_hueco_vacio_cero() -> None:
             print("ok test_hueco_vacio_cero")
             return
     raise AssertionError("se esperaba al menos un hueco de exilio vacío al inicio")
+
+
+def test_mulligan_sin_recompensa_densa() -> None:
+    env = MagicStarterEnv(
+        verbose=False,
+        reward_mode="dense",
+        dense_reward_scale=1.0,
+        max_episode_steps=80,
+    )
+    env.reset(seed=1)
+    assert env.adaptador.etapa_mulligan == "decidir"
+
+    def paso(tipo: str) -> None:
+        agent = env.agent_selection
+        idx = next(i for i, accion in enumerate(env.current_legal_actions) if accion["tipo"] == tipo)
+        env.step(idx)
+        assert env.rewards[agent] == 0.0, (tipo, env.rewards[agent])
+
+    paso("mulligan")
+    assert env.agent_selection == "player_1"
+    paso("quedarme")
+    assert env.agent_selection == "player_0"
+    paso("quedarme")
+    assert env.current_legal_actions
+    assert env.current_legal_actions[0]["tipo"] == "poner_fondo"
+    assert env.current_legal_actions[0].get("carta_id")
+    paso("poner_fondo")
+    assert env.adaptador.fase == "Principal"
+    assert env.adaptador.etapa_mulligan is None
+    print("ok test_mulligan_sin_recompensa_densa")
 
 
 def test_vigilance_no_gira() -> None:
@@ -198,6 +232,7 @@ def main() -> None:
     test_accion_apunta_hueco()
     test_forward_red()
     test_hueco_vacio_cero()
+    test_mulligan_sin_recompensa_densa()
     test_vigilance_no_gira()
     test_trample_pasa_dano()
     print("ok")

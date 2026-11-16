@@ -2,7 +2,7 @@
 
 El motor no se reescribe. Godot pide el estado y devuelve el índice de una
 acción que ya devolvió el adaptador. Si el asiento de la IA tiene la prioridad,
-elige y ejecuta antes de responder: con checkpoint de la observación 198629
+elige y ejecuta antes de responder: con checkpoint de la observación 198679
 usa load_starter_policy y act_from_obs; sin checkpoint, o si el archivo es de
 la observación 198627 o de global 41, juega una legal al azar.
 
@@ -36,7 +36,7 @@ if str(_RAIZ) not in sys.path:
 
 from env_starter import MagicStarterEnv  # noqa: E402
 
-OBS_REQUERIDA = 198629
+OBS_REQUERIDA = 198679
 _N_SLOTS = 54
 _N_ACCIONES = 16
 _CARTAS = _RAIZ / "mesa" / "cartas"
@@ -56,7 +56,7 @@ _CAMPOS_ACCION = (
 def _rechazo(detalle: str) -> str:
     return (
         f"Checkpoint rechazado: {detalle}. "
-        "Esta mesa exige la observación 198629. El rival juega al azar."
+        "Esta mesa exige la observación 198679. El rival juega al azar."
     )
 
 
@@ -103,7 +103,7 @@ def _obs_de_pesos(tensores: dict[str, Any]) -> tuple[int | None, int | None]:
 
 
 def validar_checkpoint(path: str) -> tuple[bool, str]:
-    """Acepta solo un checkpoint cuya red es la observación 198629.
+    """Acepta solo un checkpoint cuya red es la observación 198679.
 
     Los de observación 198627 y los de global 41 se rechazan con un mensaje
     explícito. No carga la política: el llamador decide el respaldo.

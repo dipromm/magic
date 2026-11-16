@@ -16,6 +16,8 @@ MAX_ACCIONES = 50
 # Tope del starter tras fase 9: max observado 15 en 20 partidas aleatorias
 # (bloqueo partido, seed 0); p95 global 10 < 50 → tope = max, redondeado a 16.
 MAX_ACCIONES_STARTER = 16
+# Sin tope, un agente aleatorio no sale del mulligan y el entreno no llega a jugar.
+TOPE_MULLIGAN = 7
 _JSONLD = Path(__file__).resolve().parent.parent / "mazos" / "bloomburrow_jsonld"
 _INDICE = _JSONLD / "_indice.json"
 
@@ -64,6 +66,7 @@ class Adaptador:
         self.actor_idx = 0
         self._en_autopase = False
         self._objeto_en_resolucion: str | None = None
+        self._limpiar_mulligan()
 
     def montar(self, mazo_p0: list[Definicion], mazo_p1: list[Definicion]) -> None:
         self.partida = Partida()
@@ -88,8 +91,10 @@ class Adaptador:
         self.actor_idx = 0
         self._en_autopase = False
         self._objeto_en_resolucion = None
+        self._limpiar_mulligan()
         self.partida.interceptar = self.modo_menu == "completo"
         exigir_resolutores(list(mazo_p0) + list(mazo_p1))
+        hay_mano = False
         for jugador, mazo in zip(self.jugadores, (mazo_p0, mazo_p1)):
             cartas = list(mazo)
             random.shuffle(cartas)
@@ -98,8 +103,151 @@ class Adaptador:
             n = min(7, len(jugador.zonas["Library"]))
             if n:
                 self._robar(jugador, n)
+                hay_mano = True
+        # Completo: la mano de 7 se decide antes del robo extra de player_0.
+        # Puente y un mazo vacío siguen el reparto de siempre.
+        if self.modo_menu == "completo" and hay_mano:
+            self._empezar_mulligan()
+        elif self.jugadores[0].zonas["Library"]:
+            self._robar(self.jugadores[0], 1)
+
+    def _limpiar_mulligan(self) -> None:
+        self.etapa_mulligan: str | None = None
+        self.veces_devueltas = [0, 0]
+        self.se_quedo = [False, False]
+        self.pendiente_ronda = [False, False]
+        self.actor_mulligan = 0
+        self.fondo_restante = [0, 0]
+        self._hubo_devolucion = False
+
+    def _empezar_mulligan(self) -> None:
+        self.etapa_mulligan = "decidir"
+        self.veces_devueltas = [0, 0]
+        self.se_quedo = [False, False]
+        self.pendiente_ronda = [True, True]
+        self.actor_mulligan = 0
+        self.fondo_restante = [0, 0]
+        self._hubo_devolucion = False
+        self.modo_decision = "mulligan"
+        self.fase = "Mulligan"
+
+    def _aplicar_robo_extra(self) -> None:
+        """El robo de más de player_0, después de quedarse y de poner al fondo."""
+        if self.etapa_mulligan != "robo":
+            return
+        self.etapa_mulligan = None
+        self.modo_decision = "menu"
+        self.fase = "Principal"
+        self.prioridad_idx = 0
+        self.pases = 0
+        self.indice_activo = 0
+        self.actor_idx = 0
         if self.jugadores[0].zonas["Library"]:
             self._robar(self.jugadores[0], 1)
+
+    def _acciones_mulligan(self) -> list[dict[str, Any]]:
+        jugador = self.jugadores[self.actor_mulligan]
+        if self.etapa_mulligan == "decidir":
+            self.modo_decision = "mulligan"
+            acciones: list[dict[str, Any]] = [{
+                "tipo": "quedarme",
+                "descripcion": "Quedarme con esta mano",
+            }]
+            if self.veces_devueltas[self.actor_mulligan] < TOPE_MULLIGAN:
+                acciones.append({
+                    "tipo": "mulligan",
+                    "descripcion": "Mulligan: barajar y robar 7",
+                })
+            return acciones
+        self.modo_decision = "fondo"
+        acciones = []
+        for object_id in jugador.zonas["Hand"]:
+            carta = self.partida.objetos[object_id]
+            acciones.append({
+                "tipo": "poner_fondo",
+                "carta_id": carta.object_id,
+                "descripcion": f"Al fondo: {carta.definicion.nombre} [{carta.object_id}]",
+            })
+        return acciones
+
+    def _exigir_mulligan(self, jugador: Jugador, etapa: str) -> int:
+        if self.etapa_mulligan != etapa:
+            raise RuntimeError("no toca esa decisión del mulligan")
+        idx = self._idx(jugador)
+        if idx != self.actor_mulligan:
+            raise RuntimeError("no le toca el mulligan")
+        return idx
+
+    def _quedarse(self, jugador: Jugador) -> None:
+        idx = self._exigir_mulligan(jugador, "decidir")
+        self.se_quedo[idx] = True
+        self.pendiente_ronda[idx] = False
+        self._seguir_ronda()
+
+    def _devolver_mano(self, jugador: Jugador) -> None:
+        idx = self._exigir_mulligan(jugador, "decidir")
+        if self.veces_devueltas[idx] >= TOPE_MULLIGAN:
+            raise RuntimeError("tope de mulligan")
+        for object_id in list(jugador.zonas["Hand"]):
+            self.partida.mover(self.partida.objetos[object_id], "Library")
+        random.shuffle(jugador.zonas["Library"])
+        n = min(7, len(jugador.zonas["Library"]))
+        if n:
+            self._robar(jugador, n)
+        self.veces_devueltas[idx] += 1
+        self.pendiente_ronda[idx] = False
+        self._hubo_devolucion = True
+        self._seguir_ronda()
+
+    def _seguir_ronda(self) -> None:
+        for idx in range(self.actor_mulligan + 1, 2):
+            if self.pendiente_ronda[idx]:
+                self.actor_mulligan = idx
+                return
+        if all(self.se_quedo):
+            self._abrir_fondo()
+            return
+        if self._hubo_devolucion:
+            self._hubo_devolucion = False
+            self.pendiente_ronda = [not self.se_quedo[0], not self.se_quedo[1]]
+            self.actor_mulligan = 0 if self.pendiente_ronda[0] else 1
+            self.etapa_mulligan = "decidir"
+            self.modo_decision = "mulligan"
+            self.fase = "Mulligan"
+            return
+        self._abrir_fondo()
+
+    def _abrir_fondo(self) -> None:
+        self.fondo_restante = list(self.veces_devueltas)
+        self._hubo_devolucion = False
+        if self.fondo_restante[0] <= 0 and self.fondo_restante[1] <= 0:
+            self.etapa_mulligan = "robo"
+            self.modo_decision = "menu"
+            return
+        self.etapa_mulligan = "fondo"
+        self.modo_decision = "fondo"
+        self.fase = "Mulligan"
+        self.actor_mulligan = 0 if self.fondo_restante[0] > 0 else 1
+
+    def _poner_fondo(self, jugador: Jugador, carta_id: str) -> None:
+        # El fondo es el final de la biblioteca. La primera elegida queda
+        # más arriba entre las del fondo: se robará antes que las siguientes.
+        idx = self._exigir_mulligan(jugador, "fondo")
+        if self.fondo_restante[idx] <= 0:
+            raise RuntimeError("no quedan cartas para el fondo")
+        carta = self.partida.objetos[carta_id]
+        if carta.zona != "Hand" or carta.controlador != jugador.id:
+            raise RuntimeError("esa carta no está en la mano")
+        self.partida.mover(carta, "Library")
+        self.fondo_restante[idx] -= 1
+        if self.fondo_restante[idx] > 0:
+            return
+        if idx == 0 and self.fondo_restante[1] > 0:
+            self.actor_mulligan = 1
+            self.modo_decision = "fondo"
+            return
+        self.etapa_mulligan = "robo"
+        self.modo_decision = "menu"
 
     def jugador_activo(self) -> Jugador:
         return self.jugadores[self.indice_activo]
@@ -296,7 +444,9 @@ class Adaptador:
         return False
 
     def quien_actua(self) -> int:
-        """Índice de quien debe elegir: prioridad, declaración o descarte."""
+        """Índice de quien debe elegir: mulligan, prioridad, declaración o descarte."""
+        if self.etapa_mulligan in ("decidir", "fondo"):
+            return self.actor_mulligan
         if self.decision is not None:
             return self.actor_idx
         if self.fase == "Descartar":
@@ -315,6 +465,10 @@ class Adaptador:
         self.actor_idx = 0 if controlador == self.jugadores[0].id else 1
 
     def acciones_legales(self, jugador: Jugador | None = None) -> list[dict[str, Any]]:
+        if self.etapa_mulligan == "robo":
+            self._aplicar_robo_extra()
+        if self.etapa_mulligan in ("decidir", "fondo"):
+            return self._acciones_mulligan()
         if self.decision is not None:
             return self._acciones_decision(self.jugadores[self.quien_actua()])
         if self._con_prioridad:
@@ -445,7 +599,7 @@ class Adaptador:
 
     def _autopasar_completo(self) -> None:
         """Si solo se puede pasar, pasan los dos. El menú queda cuando hay algo que hacer."""
-        if self._en_autopase or not self._con_prioridad:
+        if self.etapa_mulligan is not None or self._en_autopase or not self._con_prioridad:
             return
         self._en_autopase = True
         try:
@@ -1004,6 +1158,8 @@ class Adaptador:
         return True
 
     def ejecutar_accion(self, jugador: Jugador, accion: dict[str, Any]) -> None:
+        if self.etapa_mulligan == "robo":
+            self._aplicar_robo_extra()
         self.actor_idx = self._idx(jugador)
         self._dispatch(jugador, accion)
         if self._con_prioridad:
@@ -1011,6 +1167,16 @@ class Adaptador:
 
     def _dispatch(self, jugador: Jugador, accion: dict[str, Any]) -> None:
         tipo = accion["tipo"]
+        if self.etapa_mulligan in ("decidir", "fondo"):
+            if tipo == "quedarme":
+                self._quedarse(jugador)
+            elif tipo == "mulligan":
+                self._devolver_mano(jugador)
+            elif tipo == "poner_fondo":
+                self._poner_fondo(jugador, accion["carta_id"])
+            else:
+                raise RuntimeError("acción fuera del mulligan")
+            return
         if tipo == "jugar_carta":
             self._iniciar_o_jugar(jugador, accion["carta_id"], x=int(accion.get("x") or 0))
         elif tipo == "elegir_x":
