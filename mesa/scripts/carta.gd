@@ -19,6 +19,10 @@ var velocidad := 9.0
 var espera := 0.0
 var base_pos := Vector3.ZERO
 var base_yaw := 0.0
+var en_mano := false
+var base_escala := 1.0
+var base_basis := Basis.IDENTITY
+var hover_offset := Vector3.ZERO
 
 var _hitos: Array = []
 var _malla: MeshInstance3D
@@ -196,21 +200,16 @@ func iniciar_viaje(desde: Vector3, hitos: Array) -> void:
 
 
 func contiene_rayo(origen: Vector3, direccion: Vector3) -> float:
-	var y := position.y
-	if absf(direccion.y) < 0.00001:
+	var inversa := global_transform.affine_inverse()
+	var local_origen := inversa * origen
+	var local_dir := inversa.basis * direccion
+	if absf(local_dir.z) < 0.00001:
 		return -1.0
-	var t := (y - origen.y) / direccion.y
+	var t := -local_origen.z / local_dir.z
 	if t < 0.0:
 		return -1.0
-	var golpe := origen + direccion * t
-	var local := golpe - position
-	var cs := cos(-rotation.y)
-	var sn := sin(-rotation.y)
-	var lx := local.x * cs - local.z * sn
-	var lz := local.x * sn + local.z * cs
-	var mx := ANCHO * 0.5 * scale.x
-	var mz := ALTO * 0.5 * scale.z
-	if absf(lx) <= mx and absf(lz) <= mz:
+	var golpe := local_origen + local_dir * t
+	if absf(golpe.x) <= ANCHO * 0.5 and absf(golpe.y) <= ALTO * 0.5:
 		return t
 	return -1.0
 
@@ -220,15 +219,26 @@ func _process(delta: float) -> void:
 		espera -= delta
 		return
 	var k := 1.0 - exp(-velocidad * delta)
-	var extra := 0.48 if hover else 0.0
-	var destino := base_pos + Vector3(0, extra, 0)
-	position = position.lerp(destino, k)
-	_sombra.position = Vector3(position.x + 0.055, 0.012, position.z + 0.07)
-	# El nombre queda hacia el rival, para leerse desde esta cámara.
-	var yaw := base_yaw + PI + (PI * 0.5 if girada else 0.0)
-	rotation = Vector3(-PI * 0.5, lerp_angle(rotation.y, yaw, k), 0.0)
-	var s := 1.2 if hover else 1.0
-	scale = scale.lerp(Vector3.ONE * s, k)
+	var destino := base_pos
+	if en_mano:
+		destino = base_pos + (hover_offset if hover else Vector3.ZERO)
+		position = position.lerp(destino, k)
+		_sombra.visible = false
+		var actual := Basis(transform.basis.get_rotation_quaternion())
+		transform.basis = actual.slerp(base_basis, k)
+		var escala_mano := base_escala * (1.38 if hover else 1.0)
+		scale = scale.lerp(Vector3.ONE * escala_mano, k)
+	else:
+		var extra := 0.48 if hover else 0.0
+		destino = base_pos + Vector3(0, extra, 0)
+		position = position.lerp(destino, k)
+		_sombra.visible = true
+		_sombra.position = Vector3(position.x + 0.055, 0.012, position.z + 0.07)
+		# El nombre queda hacia el rival, para leerse desde esta cámara.
+		var yaw := base_yaw + PI + (PI * 0.5 if girada else 0.0)
+		rotation = Vector3(-PI * 0.5, lerp_angle(rotation.y, yaw, k), 0.0)
+		var s := 1.2 if hover else 1.0
+		scale = scale.lerp(Vector3.ONE * s, k)
 	if viajando and position.distance_to(destino) < 0.07:
 		if _hitos.is_empty():
 			viajando = false

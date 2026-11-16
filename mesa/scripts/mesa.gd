@@ -65,6 +65,7 @@ var _visor_rejilla: GridContainer
 var _preview: PanelContainer
 var _preview_imagen: TextureRect
 var _preview_nombre: Label
+var _ancla_mano := Vector3(0, 1.2, -2.4)
 var _camara: Camera3D
 var _marco: Node3D
 
@@ -425,7 +426,7 @@ func _aplicar(estado: Dictionary) -> void:
 	var legales := _ids_legales()
 	_pintar_ui(estado)
 	var puestos := {}
-	_poner_mano(estado.get("tu", {}).get("mano", []), -3.15, -1.0, false, legales, puestos)
+	_poner_mano_propia(estado.get("tu", {}).get("mano", []), legales, puestos)
 	_poner_campo(estado.get("tu", {}).get("campo", []), -0.85, -1.55, legales, puestos)
 	_poner_mano(estado.get("rival", {}).get("mano", []), 3.55, 1.0, true, legales, puestos)
 	_poner_campo(estado.get("rival", {}).get("campo", []), 1.7, 2.6, legales, puestos)
@@ -475,6 +476,9 @@ func _carta(datos: Dictionary, legales: Dictionary, extra: Dictionary):
 		payload[clave] = extra[clave]
 	nodo.aplicar(payload, textura, _dorso)
 	nodo.viajando = false
+	nodo.en_mano = false
+	nodo.base_escala = 1.0
+	nodo.hover_offset = Vector3.ZERO
 	return nodo
 
 
@@ -490,6 +494,43 @@ func _textura(nombre: String) -> Texture2D:
 	var textura := ImageTexture.create_from_image(imagen)
 	_texturas[nombre] = textura
 	return textura
+
+
+func _poner_mano_propia(cartas: Array, legales: Dictionary, puestos: Dictionary) -> void:
+	var n := cartas.size()
+	if n == 0:
+		return
+	var base := _camara.global_transform.basis
+	var adelante := (-base.z).normalized()
+	var derecha := base.x.normalized()
+	var arriba := base.y.normalized()
+	var distancia := 2.85
+	var mitad := distancia * tan(deg_to_rad(_camara.fov) * 0.5)
+	var escala := 0.9
+	var alto := 0.88 * escala
+	# El borde de abajo asoma un poco fuera de la pantalla, como una mano sujetada.
+	var centro := _camara.global_position + adelante * distancia + arriba * (-mitad + alto * 0.28)
+	_ancla_mano = centro
+	var paso := minf(0.63 * escala * 0.52, 2.05 / float(n))
+	for i in n:
+		var t := 0.0 if n <= 1 else float(i) / float(n - 1) - 0.5
+		var x := (float(i) - float(n - 1) * 0.5) * paso
+		var curva := t * t * alto * 0.28
+		var pos := centro + derecha * x - arriba * curva - adelante * float(i) * 0.02
+		var nodo = _carta(cartas[i], legales, {})
+		if nodo == null:
+			continue
+		var nuevo: bool = nodo.position == Vector3.ZERO
+		nodo.en_mano = true
+		nodo.base_pos = pos
+		nodo.base_escala = escala
+		nodo.base_basis = base * Basis(Vector3(0, 0, 1), -t * 0.72)
+		nodo.hover_offset = arriba * (alto * 0.42) - adelante * 0.35
+		if nuevo:
+			nodo.position = pos
+			nodo.transform.basis = nodo.base_basis
+			nodo.scale = Vector3.ONE * escala
+		puestos[nodo.carta_id] = pos
 
 
 func _poner_mano(cartas: Array, z: float, signo: float, boca: bool, legales: Dictionary, puestos: Dictionary) -> void:
@@ -694,7 +735,7 @@ func _pos_mazo(asiento: String) -> Vector3:
 
 
 func _pos_mano(asiento: String) -> Vector3:
-	return Vector3(0, 0.08, -3.15) if asiento == "tu" else Vector3(0, 0.08, 3.55)
+	return _ancla_mano if asiento == "tu" else Vector3(0, 0.08, 3.55)
 
 
 func _danos_de(eventos: Array) -> void:
