@@ -1,0 +1,196 @@
+{
+  "@context": "https://mtg-engine.example.org/schema/v1",
+  "@type": "Card",
+  "name": "Alania, Divergent Storm",
+  "oracle_text": "Whenever you cast a spell, if it's the first instant spell, the first sorcery spell, or the first Otter spell other than Alania you've cast this turn, you may have target opponent draw a card. If you do, copy that spell. You may choose new targets for the copy.",
+  "mana_cost": "{3}{U}{R}",
+  "supertypes": [
+    "Legendary"
+  ],
+  "card_types": [
+    "Creature"
+  ],
+  "subtypes": [
+    "Otter",
+    "Wizard"
+  ],
+  "keywords": [
+    "NONE"
+  ],
+  "base_attributes": {
+    "power": 3,
+    "toughness": 5,
+    "loyalty": null,
+    "color_indicator": []
+  },
+  "requires_human_review": false,
+  "ontology_proposal": [],
+  "abilities": [
+    {
+      "ability_order": 1,
+      "ability_type": "TriggeredAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [],
+      "trigger": {
+        "event_type": "Cast",
+        "conditions": [],
+        "condition_operator": "OR",
+        "condition_groups": [
+          {
+            "subject": {
+              "target_owner": "CONTROLLER",
+              "target_zone": "Stack",
+              "restrictions": {
+                "logical_operator": "AND",
+                "types": [
+                  "Instant"
+                ],
+                "subtypes": [],
+                "supertypes": [],
+                "modifiers": []
+              }
+            },
+            "conditions": [
+              {
+                "condition_type": "COMPARISON",
+                "left_operand": "MatchingCastCountThisTurn",
+                "left_scope": "CONTROLLER",
+                "operator": "EQUALS",
+                "right_operand": 1,
+                "right_scope": null
+              }
+            ]
+          },
+          {
+            "subject": {
+              "target_owner": "CONTROLLER",
+              "target_zone": "Stack",
+              "restrictions": {
+                "logical_operator": "AND",
+                "types": [
+                  "Sorcery"
+                ],
+                "subtypes": [],
+                "supertypes": [],
+                "modifiers": []
+              }
+            },
+            "conditions": [
+              {
+                "condition_type": "COMPARISON",
+                "left_operand": "MatchingCastCountThisTurn",
+                "left_scope": "CONTROLLER",
+                "operator": "EQUALS",
+                "right_operand": 1,
+                "right_scope": null
+              }
+            ]
+          },
+          {
+            "subject": {
+              "target_owner": "CONTROLLER",
+              "target_zone": "Stack",
+              "restrictions": {
+                "logical_operator": "AND",
+                "types": [],
+                "subtypes": [
+                  "Otter"
+                ],
+                "supertypes": [],
+                "modifiers": []
+              }
+            },
+            "conditions": [
+              {
+                "condition_type": "COMPARISON",
+                "left_operand": "MatchingCastCountThisTurn",
+                "left_scope": "CONTROLLER",
+                "operator": "EQUALS",
+                "right_operand": 1,
+                "right_scope": null
+              },
+              {
+                "condition_type": "COMPARISON",
+                "left_operand": "Name",
+                "left_scope": "EVENT_OBJECT",
+                "operator": "NOT_EQUAL",
+                "right_operand": "Name",
+                "right_scope": "SOURCE"
+              }
+            ]
+          }
+        ]
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": true,
+          "effect_type": "DrawCard",
+          "target_info": {
+            "requires_target": true,
+            "target_owner": "OPPONENT",
+            "target_zone": null,
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Player"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 1,
+            "duration": null,
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        },
+        {
+          "effect_order": 2,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "CopySpell",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "EVENT_OBJECT",
+            "target_zone": "Stack",
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "NONE",
+              "types": [],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": null,
+            "duration": null,
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null,
+            "if_effect_accepted": 1
+          }
+        }
+      ]
+    }
+  ]
+}

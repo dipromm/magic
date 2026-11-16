@@ -1,0 +1,105 @@
+{
+  "@context": "https://mtg-engine.example.org/schema/v1",
+  "@type": "Card",
+  "name": "Repel Calamity",
+  "oracle_text": "Destroy target creature with power or toughness 4 or greater.",
+  "mana_cost": "{1}{W}",
+  "supertypes": [
+    "NONE"
+  ],
+  "card_types": [
+    "Instant"
+  ],
+  "subtypes": [],
+  "keywords": [
+    "NONE"
+  ],
+  "base_attributes": {
+    "power": null,
+    "toughness": null,
+    "loyalty": null,
+    "color_indicator": []
+  },
+  "requires_human_review": false,
+  "ontology_proposal": [],
+  "abilities": [
+    {
+      "ability_order": 1,
+      "ability_type": "SpellAbility",
+      "zones_active": [
+        "Stack"
+      ],
+      "modal_choices": null,
+      "costs": [
+        {
+          "cost_type": "PayMana",
+          "amount": "{1}{W}",
+          "restrictions": {
+            "logical_operator": "NONE",
+            "types": [],
+            "subtypes": [],
+            "supertypes": [],
+            "modifiers": []
+          }
+        }
+      ],
+      "trigger": {
+        "event_type": "NONE",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "Destroy",
+          "target_info": {
+            "requires_target": true,
+            "target_owner": null,
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Creature"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [
+            {
+              "condition_type": "COMPARISON",
+              "left_operand": "Power",
+              "left_scope": "TARGET_1",
+              "operator": "GREATER_OR_EQUAL",
+              "right_operand": 4,
+              "right_scope": null
+            },
+            {
+              "condition_type": "COMPARISON",
+              "left_operand": "Toughness",
+              "left_scope": "TARGET_1",
+              "operator": "GREATER_OR_EQUAL",
+              "right_operand": 4,
+              "right_scope": null
+            }
+          ],
+          "parameters": {
+            "amount": null,
+            "duration": null,
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          },
+          "condition_operator": "OR"
+        }
+      ]
+    }
+  ]
+}

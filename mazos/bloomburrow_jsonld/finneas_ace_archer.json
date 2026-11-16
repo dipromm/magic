@@ -1,0 +1,175 @@
+{
+  "@context": "https://mtg-engine.example.org/schema/v1",
+  "@type": "Card",
+  "name": "Finneas, Ace Archer",
+  "oracle_text": "Reach, vigilance\nWhenever Finneas attacks, put a +1/+1 counter on each other creature you control that's a token or a Rabbit. Then if creatures you control have total power 10 or greater, draw a card.",
+  "mana_cost": "{G}{W}",
+  "supertypes": [
+    "Legendary"
+  ],
+  "card_types": [
+    "Creature"
+  ],
+  "subtypes": [
+    "Rabbit",
+    "Archer"
+  ],
+  "keywords": [
+    "Reach",
+    "Vigilance"
+  ],
+  "base_attributes": {
+    "power": 2,
+    "toughness": 2,
+    "loyalty": null,
+    "color_indicator": []
+  },
+  "requires_human_review": false,
+  "ontology_proposal": [],
+  "abilities": [
+    {
+      "ability_order": 1,
+      "ability_type": "TriggeredAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [],
+      "trigger": {
+        "event_type": "Attacks",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "AddCounter",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "CONTROLLER",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 0,
+              "max": "*"
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Creature"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": [
+                "Other",
+                "Token"
+              ]
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 1,
+            "duration": null,
+            "chooser": null,
+            "string_value": "PlusOnePlusOne",
+            "destination_zone": null,
+            "token_definition": null
+          }
+        },
+        {
+          "effect_order": 2,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "AddCounter",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "CONTROLLER",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 0,
+              "max": "*"
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Creature"
+              ],
+              "subtypes": [
+                "Rabbit"
+              ],
+              "supertypes": [],
+              "modifiers": [
+                "Other",
+                "Nontoken"
+              ]
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 1,
+            "duration": null,
+            "chooser": null,
+            "string_value": "PlusOnePlusOne",
+            "destination_zone": null,
+            "token_definition": null
+          }
+        },
+        {
+          "effect_order": 3,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "DrawCard",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "CONTROLLER",
+            "target_zone": null,
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Player"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [
+            {
+              "condition_type": "COMPARISON",
+              "left_operand": "TotalPower",
+              "left_scope": "CONTROLLER",
+              "operator": "GREATER_OR_EQUAL",
+              "right_operand": 10,
+              "right_scope": null,
+              "query": {
+                "target_zone": "Battlefield",
+                "target_owner": "CONTROLLER",
+                "restrictions": {
+                  "logical_operator": "AND",
+                  "types": [
+                    "Creature"
+                  ],
+                  "subtypes": [],
+                  "supertypes": [],
+                  "modifiers": []
+                }
+              }
+            }
+          ],
+          "parameters": {
+            "amount": 1,
+            "duration": null,
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ]
+    }
+  ]
+}

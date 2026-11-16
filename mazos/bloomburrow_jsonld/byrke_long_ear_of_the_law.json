@@ -1,0 +1,156 @@
+{
+  "@context": "https://mtg-engine.example.org/schema/v1",
+  "@type": "Card",
+  "name": "Byrke, Long Ear of the Law",
+  "oracle_text": "Vigilance\nWhen Byrke enters, put a +1/+1 counter on each of up to two target creatures.\nWhenever a creature you control with a +1/+1 counter on it attacks, double the number of +1/+1 counters on it.",
+  "mana_cost": "{4}{G}{W}",
+  "supertypes": [
+    "Legendary"
+  ],
+  "card_types": [
+    "Creature"
+  ],
+  "subtypes": [
+    "Rabbit",
+    "Soldier"
+  ],
+  "keywords": [
+    "Vigilance"
+  ],
+  "base_attributes": {
+    "power": 4,
+    "toughness": 4,
+    "loyalty": null,
+    "color_indicator": []
+  },
+  "requires_human_review": false,
+  "ontology_proposal": [],
+  "abilities": [
+    {
+      "ability_order": 1,
+      "ability_type": "TriggeredAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [],
+      "trigger": {
+        "event_type": "EnterTheBattlefield",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "AddCounter",
+          "target_info": {
+            "requires_target": true,
+            "target_owner": null,
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 0,
+              "max": 2
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Creature"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 1,
+            "duration": null,
+            "chooser": null,
+            "string_value": "PlusOnePlusOne",
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ]
+    },
+    {
+      "ability_order": 2,
+      "ability_type": "TriggeredAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [],
+      "trigger": {
+        "event_type": "Attacks",
+        "conditions": [
+          {
+            "condition_type": "COMPARISON",
+            "left_operand": "PlusOnePlusOne",
+            "left_scope": "EVENT_OBJECT",
+            "operator": "GREATER_OR_EQUAL",
+            "right_operand": 1,
+            "right_scope": null
+          }
+        ],
+        "subject": {
+          "target_owner": "CONTROLLER",
+          "target_zone": "Battlefield",
+          "restrictions": {
+            "logical_operator": "AND",
+            "types": [
+              "Creature"
+            ],
+            "subtypes": [],
+            "supertypes": [],
+            "modifiers": []
+          }
+        }
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "AddCounter",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "EVENT_OBJECT",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Creature"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": {
+              "dynamic_calculation": "ATTRIBUTE_REFERENCE",
+              "distinct_property": null,
+              "multiplier": null,
+              "offset": null,
+              "source_ref": "EVENT_OBJECT",
+              "attribute": "PlusOnePlusOne",
+              "query": null
+            },
+            "duration": null,
+            "chooser": null,
+            "string_value": "PlusOnePlusOne",
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ]
+    }
+  ]
+}

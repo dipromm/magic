@@ -1,0 +1,297 @@
+{
+  "@context": "https://mtg-engine.example.org/schema/v1",
+  "@type": "Card",
+  "name": "Carrot Cake",
+  "oracle_text": "When this artifact enters and when you sacrifice it, create a 1/1 white Rabbit creature token and scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{2}, {T}, Sacrifice this artifact: You gain 3 life.",
+  "mana_cost": "{1}{W}",
+  "supertypes": [
+    "NONE"
+  ],
+  "card_types": [
+    "Artifact"
+  ],
+  "subtypes": [
+    "Food"
+  ],
+  "keywords": [
+    "NONE"
+  ],
+  "base_attributes": {
+    "power": null,
+    "toughness": null,
+    "loyalty": null,
+    "color_indicator": []
+  },
+  "requires_human_review": false,
+  "ontology_proposal": [],
+  "abilities": [
+    {
+      "ability_order": 1,
+      "ability_type": "TriggeredAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [],
+      "trigger": {
+        "event_type": "EnterTheBattlefield",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "CreateToken",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "CONTROLLER",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "NONE",
+              "types": [],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 1,
+            "duration": null,
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": {
+              "power": 1,
+              "toughness": 1,
+              "colors": [
+                "WHITE"
+              ],
+              "card_types": [
+                "Creature"
+              ],
+              "subtypes": [
+                "Rabbit"
+              ],
+              "keywords": [],
+              "abilities": []
+            }
+          }
+        },
+        {
+          "effect_order": 2,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "Scry",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "CONTROLLER",
+            "target_zone": "Library",
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "NONE",
+              "types": [],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 1,
+            "duration": null,
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ]
+    },
+    {
+      "ability_order": 2,
+      "ability_type": "TriggeredAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [],
+      "trigger": {
+        "event_type": "Sacrifice",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "CreateToken",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "CONTROLLER",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "NONE",
+              "types": [],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 1,
+            "duration": null,
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": {
+              "power": 1,
+              "toughness": 1,
+              "colors": [
+                "WHITE"
+              ],
+              "card_types": [
+                "Creature"
+              ],
+              "subtypes": [
+                "Rabbit"
+              ],
+              "keywords": [],
+              "abilities": []
+            }
+          }
+        },
+        {
+          "effect_order": 2,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "Scry",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "CONTROLLER",
+            "target_zone": "Library",
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "NONE",
+              "types": [],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 1,
+            "duration": null,
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ]
+    },
+    {
+      "ability_order": 3,
+      "ability_type": "ActivatedAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [
+        {
+          "cost_type": "PayMana",
+          "amount": "{2}",
+          "restrictions": {
+            "logical_operator": "NONE",
+            "types": [],
+            "subtypes": [],
+            "supertypes": [],
+            "modifiers": []
+          }
+        },
+        {
+          "cost_type": "TapCost",
+          "amount": null,
+          "restrictions": {
+            "logical_operator": "NONE",
+            "types": [],
+            "subtypes": [],
+            "supertypes": [],
+            "modifiers": []
+          }
+        },
+        {
+          "cost_type": "SacrificeCost",
+          "amount": 1,
+          "restrictions": {
+            "logical_operator": "AND",
+            "types": [
+              "Artifact"
+            ],
+            "subtypes": [],
+            "supertypes": [],
+            "modifiers": [
+              "Self"
+            ]
+          }
+        }
+      ],
+      "trigger": {
+        "event_type": "NONE",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "GainLife",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "CONTROLLER",
+            "target_zone": null,
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Player"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 3,
+            "duration": null,
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "@context": "https://mtg-engine.example.org/schema/v1",
+  "@type": "Card",
+  "name": "Burrowguard Mentor",
+  "oracle_text": "Trample\nBurrowguard Mentor's power and toughness are each equal to the number of creatures you control.",
+  "mana_cost": "{G}{W}",
+  "supertypes": [
+    "NONE"
+  ],
+  "card_types": [
+    "Creature"
+  ],
+  "subtypes": [
+    "Rabbit",
+    "Soldier"
+  ],
+  "keywords": [
+    "Trample"
+  ],
+  "base_attributes": {
+    "power": "*",
+    "toughness": "*",
+    "loyalty": null,
+    "color_indicator": []
+  },
+  "requires_human_review": false,
+  "ontology_proposal": [],
+  "abilities": [
+    {
+      "ability_order": 1,
+      "ability_type": "StaticAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [],
+      "trigger": {
+        "event_type": "NONE",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "SetPowerToughness",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "SOURCE",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "NONE",
+              "types": [],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": {
+              "dynamic_calculation": "COUNT",
+              "distinct_property": null,
+              "multiplier": null,
+              "offset": null,
+              "source_ref": null,
+              "attribute": null,
+              "query": {
+                "target_zone": "Battlefield",
+                "target_owner": "CONTROLLER",
+                "restrictions": {
+                  "logical_operator": "AND",
+                  "types": [
+                    "Creature"
+                  ],
+                  "subtypes": [],
+                  "supertypes": [],
+                  "modifiers": []
+                }
+              }
+            },
+            "duration": "WHILE_STATIC_ACTIVE",
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ]
+    }
+  ]
+}

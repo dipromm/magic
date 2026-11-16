@@ -1,0 +1,183 @@
+{
+  "fuente": "Bloomburrow Starter Kit",
+  "estado": "Cada carta está traducida a JSON-LD en mazos/bloomburrow_jsonld. El índice conserva las cantidades.",
+  "mazos": [
+    {
+      "id": "hare_raising",
+      "nombre": "Hare Raising",
+      "colores": [
+        "W",
+        "G"
+      ],
+      "cartas": [
+        {
+          "cantidad": 1,
+          "nombre": "Byrke, Long Ear of the Law"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Serra Redeemer"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Colossification"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Fecund Greenshell"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Finneas, Ace Archer"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Warren Elder"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Pileated Provisioner"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Carrot Cake"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Rabbit Response"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Repel Calamity"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Hop to It"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Druid of the Spade"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Treeguard Duo"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Rabid Bite"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Giant Growth"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Clifftop Lookout"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Burrowguard Mentor"
+        },
+        {
+          "cantidad": 4,
+          "nombre": "Blossoming Sands"
+        },
+        {
+          "cantidad": 12,
+          "nombre": "Plains"
+        },
+        {
+          "cantidad": 11,
+          "nombre": "Forest"
+        }
+      ]
+    },
+    {
+      "id": "otter_limits",
+      "nombre": "Otter Limits",
+      "colores": [
+        "U",
+        "R"
+      ],
+      "cartas": [
+        {
+          "cantidad": 1,
+          "nombre": "Bria, Riptide Rogue"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Mockingbird"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Mind Spring"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Alania, Divergent Storm"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Sword of Vengeance"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Bellowing Crier"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Thieving Otter"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Waterspout Warden"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Pearl of Wisdom"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Charmed Sleep"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Alania's Pathmaker"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Flame Lash"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Coruscation Mage"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Quaketusk Boar"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Rabid Gnaw"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Stormcatch Mentor"
+        },
+        {
+          "cantidad": 4,
+          "nombre": "Swiftwater Cliffs"
+        },
+        {
+          "cantidad": 11,
+          "nombre": "Island"
+        },
+        {
+          "cantidad": 12,
+          "nombre": "Mountain"
+        }
+      ]
+    }
+  ],
+  "traduccion": "mazos/bloomburrow_jsonld/_indice.json"
+}

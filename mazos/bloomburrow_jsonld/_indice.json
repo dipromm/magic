@@ -1,0 +1,222 @@
+{
+  "fuente": "Bloomburrow Starter Kit",
+  "oracle": "Scryfall, texto oficial guardado en mazos/bloomburrow_oracle.json",
+  "formato": "https://mtg-engine.example.org/schema/v1",
+  "mazos": [
+    {
+      "id": "hare_raising",
+      "nombre": "Hare Raising",
+      "colores": [
+        "W",
+        "G"
+      ],
+      "cartas": [
+        {
+          "cantidad": 1,
+          "nombre": "Byrke, Long Ear of the Law",
+          "archivo": "byrke_long_ear_of_the_law.json"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Serra Redeemer",
+          "archivo": "serra_redeemer.json"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Colossification",
+          "archivo": "colossification.json"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Fecund Greenshell",
+          "archivo": "fecund_greenshell.json"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Finneas, Ace Archer",
+          "archivo": "finneas_ace_archer.json"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Warren Elder",
+          "archivo": "warren_elder.json"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Pileated Provisioner",
+          "archivo": "pileated_provisioner.json"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Carrot Cake",
+          "archivo": "carrot_cake.json"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Rabbit Response",
+          "archivo": "rabbit_response.json"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Repel Calamity",
+          "archivo": "repel_calamity.json"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Hop to It",
+          "archivo": "hop_to_it.json"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Druid of the Spade",
+          "archivo": "druid_of_the_spade.json"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Treeguard Duo",
+          "archivo": "treeguard_duo.json"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Rabid Bite",
+          "archivo": "rabid_bite.json"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Giant Growth",
+          "archivo": "giant_growth.json"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Clifftop Lookout",
+          "archivo": "clifftop_lookout.json"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Burrowguard Mentor",
+          "archivo": "burrowguard_mentor.json"
+        },
+        {
+          "cantidad": 4,
+          "nombre": "Blossoming Sands",
+          "archivo": "blossoming_sands.json"
+        },
+        {
+          "cantidad": 12,
+          "nombre": "Plains",
+          "archivo": "plains.json"
+        },
+        {
+          "cantidad": 11,
+          "nombre": "Forest",
+          "archivo": "forest.json"
+        }
+      ]
+    },
+    {
+      "id": "otter_limits",
+      "nombre": "Otter Limits",
+      "colores": [
+        "U",
+        "R"
+      ],
+      "cartas": [
+        {
+          "cantidad": 1,
+          "nombre": "Bria, Riptide Rogue",
+          "archivo": "bria_riptide_rogue.json"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Mockingbird",
+          "archivo": "mockingbird.json"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Mind Spring",
+          "archivo": "mind_spring.json"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Alania, Divergent Storm",
+          "archivo": "alania_divergent_storm.json"
+        },
+        {
+          "cantidad": 1,
+          "nombre": "Sword of Vengeance",
+          "archivo": "sword_of_vengeance.json"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Bellowing Crier",
+          "archivo": "bellowing_crier.json"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Thieving Otter",
+          "archivo": "thieving_otter.json"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Waterspout Warden",
+          "archivo": "waterspout_warden.json"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Pearl of Wisdom",
+          "archivo": "pearl_of_wisdom.json"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Charmed Sleep",
+          "archivo": "charmed_sleep.json"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Alania's Pathmaker",
+          "archivo": "alanias_pathmaker.json"
+        },
+        {
+          "cantidad": 3,
+          "nombre": "Flame Lash",
+          "archivo": "flame_lash.json"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Coruscation Mage",
+          "archivo": "coruscation_mage.json"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Quaketusk Boar",
+          "archivo": "quaketusk_boar.json"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Rabid Gnaw",
+          "archivo": "rabid_gnaw.json"
+        },
+        {
+          "cantidad": 2,
+          "nombre": "Stormcatch Mentor",
+          "archivo": "stormcatch_mentor.json"
+        },
+        {
+          "cantidad": 4,
+          "nombre": "Swiftwater Cliffs",
+          "archivo": "swiftwater_cliffs.json"
+        },
+        {
+          "cantidad": 11,
+          "nombre": "Island",
+          "archivo": "island.json"
+        },
+        {
+          "cantidad": 12,
+          "nombre": "Mountain",
+          "archivo": "mountain.json"
+        }
+      ]
+    }
+  ]
+}

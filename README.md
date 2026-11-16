@@ -15,7 +15,9 @@ Dos líneas de trabajo, independientes entre sí.
 
 **Representación de cartas.** Un CLI traduce Oracle Text a JSON-LD. La ontología OWL es el vocabulario permitido. Si el modelo necesita un concepto que no existe, la carta entra en cuarentena y una revisión humana acepta, rechaza o corrige cada propuesta antes de escribirla en el OWL y en el JSON operativo.
 
-Los mazos públicos de Archidekt pueden alimentar el motor, pero solo entran tierras y criaturas. El JSON-LD no se ejecuta todavía dentro de la partida: es la representación intermedia para un motor de reglas más amplio.
+Los mazos públicos de Archidekt pueden alimentar el motor de entrenamiento reducido (`MagicEnv`, 124/50). En paralelo, el adaptador de `reglas/` alimenta dos entornos PettingZoo nuevos: un puente 124/50 compatible con los checkpoints viejos y un starter con observación por fichas que ya no carga esos `.pth`.
+
+La primera base de cartas traducida es el Starter Kit de Bloomburrow: Hare Raising y Otter Limits, sesenta cartas cada uno. Las cantidades siguen en `mazos/bloomburrow_starter.json`. El Oracle Text oficial, tomado de Scryfall, está en `mazos/bloomburrow_oracle.json`. Cada carta en JSON-LD está en `mazos/bloomburrow_jsonld/`, y el índice con las cantidades en `mazos/bloomburrow_jsonld/_indice.json`.
 
 ---
 
@@ -49,12 +51,20 @@ flowchart LR
 
 | Pieza | Papel |
 | --- | --- |
-| `motor_prueba/motor.py` | Turnos, fases, acciones legales, combate y recompensa |
+| `motor_prueba/motor.py` | Turnos, fases, acciones legales, combate y recompensa (línea base 124/50) |
 | `motor_prueba/env_magic.py` | Entorno AEC de PettingZoo. Observación de 124 valores y máscara sobre 50 acciones |
-| `motor_prueba/train.py` | Entrenamiento PPO, logs y checkpoints |
+| `motor_prueba/env_adaptador.py` | Puente PettingZoo 124/50 sobre `reglas.Adaptador` (Forest+Oso) |
+| `motor_prueba/env_starter.py` | Starter Hare Raising vs Otter Limits; observación `ficha_v1` y `Discrete(MAX_ACCIONES_STARTER)` |
+| `motor_prueba/ficha_rl.py` | Codifica definición JSON-LD + copia en ficha fija; arma el vector plano del starter |
+| `motor_prueba/red_fichas.py` | Torso compartido, actor de 16 logits y crítico sobre `ficha_v1` |
+| `motor_prueba/train.py` | Entrenamiento PPO sobre `MagicEnv`, logs y checkpoints |
+| `motor_prueba/train_adaptador.py` | PPO self-play sobre puente o starter (`--env puente|starter`) |
+| `motor_prueba/match_starter.py` | Duelos del starter: política contra política o contra aleatorio, con cambio de asiento |
 | `motor_prueba/train_modes.py` | Curriculum, warm-start y oponente congelado |
 | `motor_prueba/deck_loader.py` | Mazos de Archidekt reducidos a tierras y criaturas |
 | `traduccion/agente_mtg_cli.py` | Oracle Text a JSON-LD, cuarentena y validación |
+| `reglas/` | Compila ese JSON-LD y ejecuta primitivas, estáticas, disparos y costes |
+| `reglas/adaptador.py` | Partida reducida (tierras, hechizos, activadas, combate) encima de `Partida` |
 | `traduccion/ontology_store.py` | OWL como fuente de verdad y exportación a JSON |
 | `IA_OWL/OWL_tfg.rdf` | Ontología editable en Protégé |
 | `IA_JSON/ontologia_motor.json` | Diccionario operativo que consume el prompt y el validador |
@@ -76,6 +86,86 @@ La red es un backbone de dos capas de 128 unidades. El actor sale a 50 acciones 
 **Self-play y una línea base fija.** Warm-start continúa una política en self-play. El modo ancla enfrenta al aprendiz con una copia congelada (`FrozenPPO`, sin gradiente) y puede intercambiar asientos para no confundir “mejor política” con “ventaja de ir primero”.
 
 **Traducción con tres contratos alineados.** El OWL dice qué conceptos existen, el prompt obliga al modelo a usarlos y un validador Python comprueba el JSON después de la llamada. Las condiciones y las cantidades son composición de primitivas (`COMPARISON`, conteos, referencias a atributos), para no inventar una constante nueva por cada carta.
+
+**Un solo nombre por concepto.** Cada clase de la ontología se escribe en PascalCase y ese identificador se copia tal cual en el prompt, el JSON y el validador: `DrawCard`, `EnterTheBattlefield`, `MoveZone`. No se usan mayúsculas sostenidas ni guiones bajos. Las palabras de sintaxis del motor (`NONE`, `COUNT`, `SOURCE`, los operadores y los colores) no son clases. Una propuesta de cuarentena trae `category` con el nombre exacto de la clase raíz (`Effect`, `TriggerEvent`, `KeywordAbility`, `Counter`, `Zone`, `PhaseAndStep`, `Ability`, `Cost`, `CardType`, `CardAttribute`, `CardSupertype`, `Status`, `GameEntity`) y `proposed_constant` en PascalCase, nombrando un solo concepto reutilizable. `Exile` es la zona; exiliar se expresa con `MoveZone`. Lo opcional no es una keyword. Los efectos que describían una carta concreta han salido del vocabulario.
+
+---
+
+## Traducción del starter
+
+`mazos/build_bloomburrow_jsonld.py` lee el Oracle Text y vuelve a escribir las 39 cartas distintas. Las clases que faltaban se aceptan con `ontology_store`, el mismo camino que una propuesta marcada con Y en el CLI: subclase OWL, comentario en español y entrada en `IA_JSON/ontologia_motor.json`.
+
+Cada efecto es una primitiva. Un +2/+1 son `ModifyPower` y `ModifyToughness`. Doblar los contadores +1/+1 es `AddCounter` cuyo `amount` es el número de contadores de esa clase que el objeto ya tiene. Rabid Bite es un `DealDamage`: `damage_source` es la criatura propia y `amount` es su poder. Ganar vida, añadir maná, scry, mirar, revelar hasta una tierra, copiar un hechizo o crear una ficha copia son clases propias porque no salen de combinar las que ya había.
+
+Prowess no lleva parámetros: va en `keywords` y su comentario en el OWL dice cómo se ejecuta. Equip, Enchant y Offspring sí llevan coste u objetivo. Están en `keywords` y, además, en la ability que los ejecuta, marcada con `implements_keyword`. El motor usa esa ability y no vuelve a inyectar el recordatorio.
+
+El prompt del agente recoge las convenciones que estas cartas necesitan:
+
+- `restrictions.subtypes` filtra Rabbit u Otter. El subtipo no es una clase.
+- `trigger.subject` elige el objeto del evento y ese objeto es `EVENT_OBJECT`. El trigger se dispara una vez por objeto que cumple el filtro.
+- `condition_groups` con operador `OR` es una disyunción de filtros. Alania dispara una sola vez aunque el hechizo sea a la vez el primer instantáneo y el primer Otter.
+- `PREVIOUS_TARGET` es el resultado del efecto anterior. `ATTACHED` es la criatura encantada o equipada.
+- `MoveZone` desde la biblioteca, sin objetivo, toma el tope. Si otra carta entra girada, después va un `Tap`. `EnterTapped` queda para el permanente que entra girado él mismo.
+- Las condiciones se evalúan al resolver el efecto, cuando los efectos anteriores de la misma habilidad ya se han aplicado. Finneas mira el poder con los contadores ya puestos. Rabid Gnaw inflige daño con el +1/+0 ya aplicado.
+
+En Fecund Greenshell, «resistencia mayor que su poder» se aplica a la criatura que entra, incluida la fuente. Con el 4/6 impreso, entra y el disparo se cumple.
+
+`reglas/` es el intérprete de ese JSON-LD. `compilar` deja una `Definicion` inmutable; cada copia en la partida es un `Objeto` con id y generación. No se genera una función por carta.
+
+Las habilidades estáticas no se escriben sobre la carta. `poder`, `resistencia` y `tiene_keyword` las vuelven a leer en ese momento: primero la habilidad que define la fuerza (`SetPowerToughness`), después los bonos (`ModifyPower`, `ModifyToughness`) y al final los contadores. Si el cálculo vuelve a entrar en el mismo objeto, usa la fuerza impresa y termina. Así el poder de Burrowguard entra en la suma de Finneas, y el +2/+0 del Druid también, sin guardar un número que se quede viejo. El Druid cuenta cualquier ficha, no solo las que además son criatura.
+
+Un disparo crea un `ObjetoPila` con su propio id, la fuente y el `EVENT_OBJECT`. Se resuelve después, efecto a efecto, con la misma tabla de primitivas que un hechizo. La X se elige al lanzar, queda en el objeto de la pila y `amount: "X"` la lee ahí. `ReduceManaCost` se resta en `coste_de_lanzar`, antes de pagar: Mind Spring con X = 3 baja de {3}{U}{U} a {2}{U}{U} si Stormcatch Mentor está en juego.
+
+Las comparaciones son datos (`COMPARISON`, `COUNT`, `TotalPower`, poder de otro objeto). `Repel Calamity` usa `condition_operator: OR`. El motor de entrenamiento no pasa por este intérprete: sigue jugando tierras y criaturas con fuerza fija. La comprobación de las 39 cartas y de estos casos es `python -m reglas.test_integracion`.
+
+`reglas/adaptador.py` monta la partida sobre `Partida`: tierras, permanentes y hechizos, habilidades activadas, atacar y bloquear. Paga el `Coste` con colores (`WUBRG` → reserva `WHITE`/`BLUE`/…). La pila se vacía en LIFO dentro de la misma acción. No se abre prioridad al rival: solo se detiene por una elección del jugador que actúa (objetivos, X, offspring, opcionales, scry, descarte de resolución, mirar, entrar como copia, mover zona o cambiar los objetivos de una copia). Están cableadas, entre otras, `EnterTapped`, `PreventUntap`, `AddKeyword`, `MoveZone`, `Discard`, `Scry`, `Look`, `RevealUntil`, `Attach`, `CantBeBlocked`, `CopySpell`, `EnterAsCopy`, `CreateCopyToken` y `GrantPlay`. `MoveZone` respeta `target_count.max` y `amount`. Desde la biblioteca no hay menú: Pathmaker exilia solo la carta de arriba y `max: "*"` sigue moviendo todas las que cumplan. Si la zona no es la biblioteca y hay más candidatas que el tope, elige el jugador. Al cerrar el turno, si la mano supera 7, la fase `Descartar` pide una carta a cementerio hasta quedar en 7, sin recompensa, y no se salta. Principal, declarar atacantes y declarar bloqueadores avanzan solos solo cuando la única acción es pasar o confirmar. El combate emite `Attacks` y `DealsDamage` (también contra un jugador). Prisa salta la enfermedad de invocación. Prowess da +1/+1 hasta el final del turno a las criaturas que la tengan cuando se lanza un hechizo que no es criatura. Si alguien tiene first strike o double strike hay un paso de daño antes. Siguen volar/alcance, `CantBeBlocked`, Vigilance (no gira al atacar) y Trample (exceso a la cara). Un aura cuyo enlace ya no es una criatura en el campo va al cementerio; un equipo se suelta y se queda. Al montar, cada operando, atributo, evento y ámbito del mazo tiene que tener resolvedor; si falta uno, la partida no arranca. Robar con la biblioteca vacía, también a mitad de un hechizo, pone la vida a 0. Una partida aleatoria Hare Raising vs Otter Limits es `python -m reglas.partida_aleatoria`. La equivalencia Forest+Oso con `motor_prueba/motor.py` sigue en `python -m reglas.test_adaptador`.
+
+### Entrenamiento sobre el adaptador (fases 8–11)
+
+El motor viejo (`motor.py` + checkpoints 124) se conserva como línea base. El PPO nuevo entra por el adaptador en cuatro pasos ya cableados:
+
+1. **Puente 124/50.** `MagicAdaptadorEnv` observa con el mismo layout que `ObservadorRL`, pero fuerza y resistencia salen de `poder()` / `resistencia()`. Menú de equivalencia (pasar, tierra, criatura, atacar, bloquear) con mazos Forest+Oso. Si `acciones_legales` supera 50, el episodio se trunca. Un checkpoint 124 existente actúa ahí; `probe_adaptador_stats.py` comprueba que alterar fuerza/resistencia en la obs cambia la jugada greedy.
+2. **Tope de acciones del starter.** `contar_acciones_starter.py` mide menús con `medir=True` (sin lanzar `DemasiadasAcciones`) en Hare Raising vs Otter Limits. Con bloqueo partido y 20 partidas (seed 0): máximo observado 15, p95 global 10. Como p95 < 50, el tope es el máximo; queda `MAX_ACCIONES_STARTER = 16` (redondeo a múltiplo de 8). El menú de bloqueo se parte en `elegir_bloqueador` → `elegir_atacante` para no explotar el producto.
+3. **Ficha de ontología + actor enmascarado.** `MagicStarterEnv` emite un vector plano `ficha_v1` (`OBS_DIM` = 198 627): 54 huecos × ficha de 3 671 (definición JSON-LD + estado de la copia), 41 globales y 16 bloques de acción de 22 (tipo + dos índices de hueco). La definición guarda hasta 5 efectos por habilidad, para que Trample y Prisa de Sword of Vengeance no se corten. El último float de la copia es el hueco de la criatura a la que está anexa un aura o un equipo. Un torso compartido `3671 → 256 → 128` comprime cada ficha; el actor puntúa las 16 acciones con máscara hasta el muestreo. Los mazos abiertos reutilizan las mismas casillas de `IA_JSON/ontologia_motor.json`. Entrena con `train_adaptador.py --env starter --reward-mode sparse`. Los `.pth` de 124, los del starter de 448 y los `ficha_v1` de 2 286 o de 123 722 no cargan aquí; el puente 124/50 no cambia.
+4. **Keywords de combate alineadas.** Vigilance, Trample, Flying y Reach filtran reglas y bits de ficha en el mismo cambio. `probe_keywords.py` comprueba máscara de bloqueo con/sin Flying y el bit en la cabecera de la ficha (`OFFSET_KEYWORDS`).
+
+```powershell
+Set-Location .\motor_prueba
+python .\test_env_adaptador.py
+python .\contar_acciones_starter.py --games 20 --seed 0
+python .\train_adaptador.py --env puente --run-name puente_demo --reward-mode sparse --max-epochs 3 --epoch-steps 1000
+python .\train_adaptador.py --env starter --run-name starter_sparse --reward-mode sparse --max-epochs 5 --epoch-steps 2000
+python .\train_adaptador.py --env starter --run-name starter_curr --reward-mode curriculum --curriculum-steps 150000 --max-epochs 80 --epoch-steps 2048
+python .\probe_adaptador_stats.py --ckpt .\modelos\sparse_random_01_policy.pth
+python .\probe_keywords.py
+python .\play_adaptador.py --env starter --ckpt .\modelos\starter_c1_policy.pth --human-seat p0
+python .\match_starter.py --a .\modelos\starter_c1_policy.pth --b random --games 40
+python .\match_starter.py --a .\modelos\starter_c1_policy.pth --b .\modelos\starter_s0_policy.pth --games 40
+```
+
+`play_adaptador.py` imprime el tablero en cada decisión, también en el turno del rival: fase, vidas, mano, campo (nombre, fuerza/resistencia, girada, ataque o bloqueo) y la acción que juega.
+
+`match_starter.py` carga checkpoints `ficha_v1`. `--b random` muestrea una acción legal. `--swap` viene activo: las partidas impares cambian quién es player_0. El winrate es victorias / partidas con un solo jugador a 0 vidas. Truncado o doble muerte no suman. Cada tanda escribe `logs/match_starter_<a>_vs_<b>.jsonl`. Sin `--seed`, cada partida de `play_adaptador.py` y de `match_starter.py` baraja al azar. `--seed N` fija esa baraja para repetirla.
+
+Cuarenta partidas por emparejamiento, con `--seed 0`, greedy, tope 500 pasos, sin truncados. Los cuatro checkpoints son los de anoche: curriculum semillas 0, 1 y 2 (`starter_c0`, `starter_c1`, `starter_c2`) y sparse semilla 0 (`starter_s0`).
+
+| Emparejamiento | Victorias | Winrate del primero |
+| --- | --- | --- |
+| c0 vs aleatorio | 15–25 | 0,375 |
+| c1 vs aleatorio | 16–24 | 0,400 |
+| c2 vs aleatorio | 7–33 | 0,175 |
+| s0 vs aleatorio | 16–24 | 0,400 |
+| c0 vs s0 | 20–20 | 0,500 |
+| c1 vs s0 | 20–20 | 0,500 |
+| c2 vs s0 | 20–20 | 0,500 |
+
+Esas victorias no ordenan las políticas ni miden ventaja de salir. El asiento está atado al mazo: `player_0` es siempre Hare Raising y `player_1` siempre Otter Limits. `--swap` cambia el checkpoint de sitio, no las cartas. En las 50 partidas de c1 contra s0 (`logs/match_starter_starter_c1_policy_vs_starter_s0_policy.jsonl`) gana siempre P0. La vida final de P1 es 0 en las 50, la de P0 queda entre 20 y 23, y los pasos van de 29 a 187 (media 66,1). Ese 0 exacto lo escribió `_robar` cuando le tocaba robar y la biblioteca ya estaba vacía.
+
+Aquellos checkpoints se entrenaron con un `MoveZone` que, en Alania's Pathmaker, exiliaba la biblioteca entera: la consulta sin restricciones devolvía todas las cartas y se ignoraban `amount: 1` y `target_count.max: 1`. El robo siguiente del rival ponía la vida a 0 y el entorno sumaba +10/−10 sin combate. Curriculum y sparse compartían ese cierre, así que las dos políticas aprendían a bajar tierras y pasar el turno. Esos `.pth` no cargan con el layout actual de `ficha_v1` (el tipo de acción ahora incluye `descartar`).
+
+El motor ya no hace eso. `mover_zona` se queda con los primeros N objetos según `target_count.max` y `amount` (`max: "*"` sigue moviendo todos, como las reveladas de Clifftop Lookout). Pathmaker exilia solo la carta de arriba y deja el permiso de jugarla; esa exilio no abre menú. Al cerrar el turno, si la mano supera 7 cartas, la fase pasa a `Descartar`: el jugador elige una carta a cementerio hasta quedar en 7; sin puntos por descartar, y esa fase no se salta. Con 7 o menos se cambia de jugador, se limpian los efectos de fin de turno y se roba. Si la mano es mayor que el tope del menú, se enseñan las primeras `max_acciones` y al descartar entran las siguientes. El layout de `ficha_v1` de este cambio (3 671 por ficha, `OBS_DIM` 198 627) tampoco carga los `.pth` entrenados con la ficha de 2 286.
+
+Contra aleatorio, ninguna de las cuatro ganó como P1 (0/20). Como P0, c1 y s0 ganaron 16/20, c0 15/20 y c2 7/20. Eso mide el cierre viejo por asiento, no una fuerza de combate. Hay que volver a entrenar sobre el motor corregido.
 
 ---
 
@@ -250,11 +340,9 @@ Durante la cuarentena, cada propuesta se revisa sola: `Y` la escribe en el OWL y
 
 ## Alcance de este código
 
-El motor juega un Magic reducido: tierras que producen un maná genérico, criaturas con fuerza y resistencia, y combate directo con bloqueo. No hay pila, instantáneos, habilidades activadas ni el reglamento completo.
+Hay dos tracks de entrenamiento. El primero (`MagicEnv` + `train.py`) sigue siendo un Magic reducido: tierras de un maná genérico, criaturas con fuerza fija y combate directo; observación de 124 y menú de 50. No hay pila ni habilidades activadas.
 
-La observación cabe en 124 números y el menú de acciones está fijado en 50. Eso alcanza para el prototipo y habría que reabrirlo si el estado del tablero crece.
-
-La traducción y el motor comparten el dominio, no el runtime. El CLI produce y valida JSON-LD; la partida sigue construyendo objetos `Land` y `Creature`.
+El segundo track (`env_adaptador` / `env_starter` + `train_adaptador.py`) pasa por el intérprete JSON-LD: pila LIFO, maná por color, hechizos y activadas del starter, combate con keywords. No hay prioridad del rival en la pila, ni ancla ni cambio de asiento durante el entreno: en self-play los dos usan la misma red. La observación del starter es `ficha_v1` (ontología + estado de la copia; 198 627 floats en un Box plano, torso `3671 → 256 → 128`). Rompe los checkpoints de 124, los del starter corto de 448 y los `ficha_v1` de layouts anteriores, incluido el de 123 722. El puente 124/50 sigue sirviendo para reutilizar políticas viejas sobre el adaptador con mazos Forest+Oso. Los duelos de estos `.pth` van por `match_starter.py`, aparte de `match_checkpoints.py`, que sigue siendo solo del motor 124.
 
 ---
 

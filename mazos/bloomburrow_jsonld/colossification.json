@@ -1,0 +1,207 @@
+{
+  "@context": "https://mtg-engine.example.org/schema/v1",
+  "@type": "Card",
+  "name": "Colossification",
+  "oracle_text": "Enchant creature\nWhen this Aura enters, tap enchanted creature.\nEnchanted creature gets +20/+20.",
+  "mana_cost": "{5}{G}{G}",
+  "supertypes": [
+    "NONE"
+  ],
+  "card_types": [
+    "Enchantment"
+  ],
+  "subtypes": [
+    "Aura"
+  ],
+  "keywords": [
+    "Enchant"
+  ],
+  "base_attributes": {
+    "power": null,
+    "toughness": null,
+    "loyalty": null,
+    "color_indicator": []
+  },
+  "requires_human_review": false,
+  "ontology_proposal": [],
+  "abilities": [
+    {
+      "ability_order": 1,
+      "ability_type": "StaticAbility",
+      "zones_active": [
+        "Stack"
+      ],
+      "modal_choices": null,
+      "costs": [],
+      "trigger": {
+        "event_type": "NONE",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "Attach",
+          "target_info": {
+            "requires_target": true,
+            "target_owner": null,
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 1,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Creature"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": null,
+            "duration": "PERMANENT",
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ],
+      "implements_keyword": "Enchant"
+    },
+    {
+      "ability_order": 2,
+      "ability_type": "TriggeredAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [],
+      "trigger": {
+        "event_type": "EnterTheBattlefield",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "Tap",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "ATTACHED",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 0,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Creature"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": null,
+            "duration": null,
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ]
+    },
+    {
+      "ability_order": 3,
+      "ability_type": "StaticAbility",
+      "zones_active": [
+        "Battlefield"
+      ],
+      "modal_choices": null,
+      "costs": [],
+      "trigger": {
+        "event_type": "NONE",
+        "conditions": []
+      },
+      "effects": [
+        {
+          "effect_order": 1,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "ModifyPower",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "ATTACHED",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 0,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Creature"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 20,
+            "duration": "WHILE_STATIC_ACTIVE",
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        },
+        {
+          "effect_order": 2,
+          "mode_id": null,
+          "is_optional": false,
+          "effect_type": "ModifyToughness",
+          "target_info": {
+            "requires_target": false,
+            "target_owner": "ATTACHED",
+            "target_zone": "Battlefield",
+            "target_count": {
+              "min": 0,
+              "max": 1
+            },
+            "restrictions": {
+              "logical_operator": "AND",
+              "types": [
+                "Creature"
+              ],
+              "subtypes": [],
+              "supertypes": [],
+              "modifiers": []
+            }
+          },
+          "effect_conditions": [],
+          "parameters": {
+            "amount": 20,
+            "duration": "WHILE_STATIC_ACTIVE",
+            "chooser": null,
+            "string_value": null,
+            "destination_zone": null,
+            "token_definition": null
+          }
+        }
+      ]
+    }
+  ]
+}

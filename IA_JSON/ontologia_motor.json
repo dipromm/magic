@@ -1,20 +1,26 @@
 {
   "Ability": [
-    "Activated_ability",
-    "Spell_ability",
-    "Static_ability",
-    "Triggered_ability"
+    "ActivatedAbility",
+    "SpellAbility",
+    "StaticAbility",
+    "TriggeredAbility"
   ],
-  "CardAtribute": [
+  "CardAttribute": [
     "Color",
     "ConvertedManaCost",
     "ManaCost",
+    "ManaSpent",
+    "MatchingCastCountThisTurn",
+    "Name",
+    "OptionalCostPaid",
     "Power",
+    "TotalPower",
     "Toughness"
   ],
   "CardSupertype": [
     "Basic",
-    "Legendary"
+    "Legendary",
+    "Snow"
   ],
   "CardType": [
     "Artifact",
@@ -25,53 +31,67 @@
     "Planeswalker",
     "Sorcery"
   ],
-  "Costs": [
-    "Discard_cost",
-    "Mana_cost",
-    "Pay_life_cost",
-    "Remove_counters_cost",
-    "Sacrifice_cost",
-    "Tap_cost"
+  "Cost": [
+    "DiscardCost",
+    "OptionalPayMana",
+    "PayLife",
+    "PayMana",
+    "RemoveCounterCost",
+    "SacrificeCost",
+    "TapCost"
   ],
-  "Counters": [
-    "+-X_+-Y",
+  "Counter": [
     "Charge",
     "Defense",
     "Finality",
     "Lore",
     "Loyalty",
-    "MinusOne_MinusOne",
+    "MinusOneMinusOne",
     "Oil",
-    "PlusOne_PlusOne",
+    "PlusOnePlusOne",
+    "PlusXPlusY",
     "Poison",
     "Stun",
     "Time"
   ],
   "Effect": [
-    "ADD_SUBTYPE",
-    "ADD_TYPE",
-    "Add_counter",
-    "COUNTER",
-    "CREATE_TOKEN",
-    "Deal_damage",
+    "AddCounter",
+    "AddKeyword",
+    "AddMana",
+    "AddSubtype",
+    "AddType",
+    "Attach",
+    "CantBeBlocked",
+    "CopySpell",
+    "CounterSpell",
+    "CreateCopyToken",
+    "CreateToken",
+    "DealDamage",
     "Destroy",
     "Discard",
-    "Draw_card",
-    "Exile",
+    "DrawCard",
+    "EnterAsCopy",
+    "EnterTapped",
+    "GainLife",
     "Goad",
-    "Lose_life",
-    "MOVE_ZONE",
-    "Put_creature_from_hand",
-    "Put_onto_battlefield_tapped",
+    "GrantPlay",
+    "Look",
+    "LoseLife",
+    "ModifyPower",
+    "ModifyToughness",
+    "MoveZone",
+    "PreventUntap",
+    "ReduceManaCost",
     "Reveal",
-    "SET_POWER_TOUGHNESS",
-    "SET_POWER_TOUGHNESS_DYNAMIC",
-    "Search_library",
+    "RevealUntil",
+    "Scry",
+    "SearchLibrary",
+    "SetPowerToughness",
     "Shuffle",
-    "TAP"
+    "Tap"
   ],
   "GameEntity": [
-    "Manapool",
+    "ManaPool",
     "Player"
   ],
   "KeywordAbility": [
@@ -86,49 +106,57 @@
     "Hexproof",
     "Indestructible",
     "Lifelink",
-    "May",
     "Menace",
+    "Offspring",
     "Protection",
+    "Prowess",
     "Reach",
     "Trample",
     "Vigilance",
-    "Ward",
-    "ADD_KEYWORD"
+    "Ward"
   ],
-  "PhaseandStep": [
-    "Beggining_phase",
+  "PhaseAndStep": [
+    "BeginningPhase",
     "Cleanup",
-    "Combat_damage",
-    "Combat_phase",
-    "Declare_attackers",
-    "Declare_blockers",
-    "Draw",
-    "End_step",
-    "Ending_phase",
-    "Main_phase",
-    "Untap",
+    "CombatDamage",
+    "CombatPhase",
+    "DeclareAttackers",
+    "DeclareBlockers",
+    "DrawStep",
+    "EndStep",
+    "EndingPhase",
+    "MainPhase",
+    "UntapStep",
     "Upkeep"
   ],
   "Status": [
     "Attacking",
     "Blocking",
+    "EnteredThisTurn",
     "Goaded",
+    "Noncreature",
     "Nonland",
     "Nontoken",
+    "Other",
+    "Revealed",
+    "Self",
     "Tapped",
+    "Token",
     "Untapped"
   ],
-  "Trigger_event": [
+  "TriggerEvent": [
+    "Attacks",
     "Cast",
+    "DealsDamage",
     "Dies",
-    "Enter_the_battlefield",
-    "Upkeep_begin",
-    "ATTACKS",
-    "Leaves_graveyard"
+    "EnterTheBattlefield",
+    "LeavesGraveyard",
+    "Sacrifice",
+    "UpkeepBegin"
   ],
-  "Zones": [
+  "Zone": [
     "Battlefield",
-    "Command_zone",
+    "CommandZone",
     "Exile",
     "Graveyard",
     "Hand",
