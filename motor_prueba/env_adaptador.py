@@ -193,6 +193,7 @@ class MagicAdaptadorEnv(AECEnv):
 
         recompensa = 0.0
         tipo = decision["tipo"]
+        # quedarme, mulligan y poner_fondo no suman, igual que pasar y descartar.
         if tipo in ("jugar_carta", "elegir_x", "elegir_objetivo"):
             recompensa += self._dense(0.1)
         elif tipo == "declarar_atacante":

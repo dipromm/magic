@@ -60,6 +60,7 @@ _SCOPES = ("CONTROLLER", "OPPONENT", "SOURCE", "EVENT", "OTHER")
 _DECISION_MODES = (
     "menu", "objetivo", "x", "elegir_bloqueador", "elegir_atacante",
     "opcional", "scry", "offspring", "otro",
+    "mulligan", "fondo",
 )
 _ACTION_TYPES = (
     "pasar_fase",
@@ -82,6 +83,9 @@ _ACTION_TYPES = (
     "omitir_opcional",
     "mantener_objetivos",
     "elegir_scry",
+    "quedarme",
+    "mulligan",
+    "poner_fondo",
 )
 _FASE_A_ONTO = {
     "Principal": "MainPhase",

@@ -32,6 +32,8 @@ _COMBATE = {
     "Fin del combate",
 }
 _PREFERENCIA = (
+    "quedarme",
+    "poner_fondo",
     "jugar_carta",
     "declarar_atacante",
     "elegir_bloqueador",
@@ -100,7 +102,7 @@ def _checkpoints(tmp: Path) -> None:
     malo = tmp / "obs_198627.pth"
     torch.save({"obs_dim": 198627, "policy": {}}, malo)
     ok, mensaje = validar_checkpoint(str(malo))
-    assert not ok and "198627" in mensaje and "198629" in mensaje, mensaje
+    assert not ok and "198627" in mensaje and "198679" in mensaje, mensaje
 
     antiguo = tmp / "global41.pth"
     torch.save({
@@ -111,24 +113,29 @@ def _checkpoints(tmp: Path) -> None:
         }
     }, antiguo)
     ok, mensaje = validar_checkpoint(str(antiguo))
-    assert not ok and "global 41" in mensaje and "198629" in mensaje, mensaje
+    assert not ok and "global 41" in mensaje and "198679" in mensaje, mensaje
 
     puente = tmp / "obs_124.pth"
     torch.save({"obs_dim": 124}, puente)
     ok, mensaje = validar_checkpoint(str(puente))
-    assert not ok and "124" in mensaje and "198629" in mensaje, mensaje
+    assert not ok and "124" in mensaje and "198679" in mensaje, mensaje
+
+    anterior = tmp / "obs_198629.pth"
+    torch.save({"obs_dim": 198629, "policy": {}}, anterior)
+    ok, mensaje = validar_checkpoint(str(anterior))
+    assert not ok and "198629" in mensaje and "198679" in mensaje, mensaje
 
     ok, mensaje = validar_checkpoint(str(tmp / "no_esta.pth"))
-    assert not ok and "198629" in mensaje
+    assert not ok and "198679" in mensaje
 
     actor, critico, _torso = build_actor_critic()
     policy = _build_policy_starter()
     # El crítico no se carga en la mesa; solo hace falta un state_dict compatible.
     del actor
-    bueno = tmp / "obs_198629.pth"
+    bueno = tmp / "obs_198679.pth"
     save_magic_checkpoint(bueno, policy, critico)
     data = torch.load(bueno, map_location="cpu", weights_only=False)
-    data["obs_dim"] = 198629
+    data["obs_dim"] = 198679
     data["env"] = "starter"
     torch.save(data, bueno)
     ok, mensaje = validar_checkpoint(str(bueno))
@@ -136,7 +143,7 @@ def _checkpoints(tmp: Path) -> None:
     mesa = Mesa(human_seat="p0", ckpt=str(bueno), seed=2, max_steps=30)
     assert mesa.rival == "checkpoint", mesa.aviso
     assert mesa.aviso == ""
-    print("ok checkpoint 198629 carga; 198627, global 41 y 124 se rechazan")
+    print("ok checkpoint 198679 carga; 198629, 198627, global 41 y 124 se rechazan")
 
 
 def _puerto() -> int:
@@ -193,6 +200,16 @@ def _partida_contra_aleatorio() -> None:
     try:
         codigo, estado = _leer(base + "/estado")
         assert codigo == 200, estado
+        for _ in range(40):
+            tipos = {a.get("tipo") for a in estado.get("acciones", [])}
+            if estado.get("fase") == "Principal" and not (tipos & {"quedarme", "mulligan", "poner_fondo"}):
+                break
+            assert estado.get("acciones"), estado
+            accion = _elegir(estado["acciones"])
+            codigo, estado = _leer(base + "/accion", {"indice": accion["indice"]})
+            assert codigo == 200, estado
+        else:
+            raise AssertionError(f"no salió del mulligan: {estado.get('fase')} {estado.get('acciones')}")
         assert estado["fase"] == "Principal"
         assert estado["prioridad"] == "tu"
         assert estado["rival_politica"] == "aleatorio"
@@ -266,12 +283,43 @@ def _rechazo_en_el_proceso(tmp: Path) -> None:
     try:
         _codigo, estado = _leer(f"http://127.0.0.1:{port}/estado")
         assert estado["rival_politica"] == "aleatorio"
-        assert "198627" in estado["aviso"] and "198629" in estado["aviso"]
+        assert "198627" in estado["aviso"] and "198679" in estado["aviso"]
         assert estado["acciones"], "el rechazo no debe tumbar la partida"
         print("ok el servidor sigue con rival aleatorio tras un checkpoint 198627")
     finally:
         proc.terminate()
         proc.wait(timeout=5)
+
+
+def _london_en_get_estado() -> None:
+    port = _puerto()
+    proc, lineas = _arrancar(port, ["--seed", "5", "--max-steps", "80"])
+    base = f"http://127.0.0.1:{port}"
+    try:
+        codigo, estado = _leer(base + "/estado")
+        assert codigo == 200, estado
+        tipos = [a["tipo"] for a in estado["acciones"]]
+        assert estado["fase"] == "Mulligan", estado["fase"]
+        assert "quedarme" in tipos and "mulligan" in tipos, tipos
+        idx_m = next(a["indice"] for a in estado["acciones"] if a["tipo"] == "mulligan")
+        codigo, estado = _leer(base + "/accion", {"indice": idx_m})
+        assert codigo == 200, estado
+        assert any(a["tipo"] == "quedarme" for a in estado["acciones"]), estado["acciones"]
+        idx_q = next(a["indice"] for a in estado["acciones"] if a["tipo"] == "quedarme")
+        codigo, estado = _leer(base + "/accion", {"indice": idx_q})
+        assert codigo == 200, estado
+        fondos = [a for a in estado["acciones"] if a.get("tipo") == "poner_fondo"]
+        assert fondos, estado["acciones"]
+        assert all(a.get("carta_id") for a in fondos), fondos
+        print("ok GET /estado ofrece mulligan y poner_fondo con carta_id")
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        if proc.returncode not in (0, -15, None) and proc.returncode != 0:
+            print("".join(lineas[-30:]))
 
 
 def main() -> None:
@@ -280,6 +328,7 @@ def main() -> None:
     _orden_de_zonas()
     _checkpoints(tmp)
     _rechazo_en_el_proceso(tmp)
+    _london_en_get_estado()
     _partida_contra_aleatorio()
     print("ok partida contra aleatorio")
 

@@ -28,10 +28,13 @@ from ficha_rl import (  # noqa: E402
     EVENTS,
     GLOBAL_DIM,
     HEADER_DIM,
+    OBS_DIM,
     PHASES,
     ZONES,
     construir_slots,
+    encode_accion,
     encode_definicion,
+    encode_global,
     encode_instancia,
 )
 from jugador import Player  # noqa: E402
@@ -1546,7 +1549,184 @@ def test_ventana_vacia_avanza_y_la_limpieza_pide_descarte() -> None:
 def test_bloque_global_de_pasos() -> None:
     assert "BeginningOfCombat" in PHASES
     assert "EndOfCombat" in PHASES
-    assert GLOBAL_DIM == 43
+    assert GLOBAL_DIM == 45
+    assert OBS_DIM == 198679
+    vacio = Adaptador()
+    vacio.montar([], [])
+    vacio.modo_decision = "mulligan"
+    mulligan = encode_global(vacio, 0)
+    vacio.modo_decision = "fondo"
+    fondo = encode_global(vacio, 0)
+    vacio.modo_decision = "menu"
+    menu = encode_global(vacio, 0)
+    assert mulligan != fondo and mulligan != menu and fondo != menu
+    quedarme = encode_accion({"tipo": "quedarme"}, {})
+    devolver = encode_accion({"tipo": "mulligan"}, {})
+    pasar = encode_accion({"tipo": "pasar_fase"}, {})
+    desconocida = encode_accion({"tipo": "tipo_desconocido"}, {})
+    assert any(v == 1.0 for v in quedarme)
+    assert quedarme != devolver and quedarme != pasar and quedarme != desconocida
+    assert not any(v == 1.0 for v in desconocida[:-2])
+
+
+def _accion(adaptador: Adaptador, tipo: str) -> dict:
+    return _por_tipo(adaptador.acciones_legales(), tipo)
+
+
+def _partida_london():
+    adaptador = Adaptador(modo_menu="completo")
+    adaptador.montar(mazo_prueba(6, 6), mazo_prueba(6, 6))
+    return adaptador, adaptador.jugadores[0], adaptador.jugadores[1]
+
+
+def test_london_los_dos_se_quedan() -> None:
+    adaptador, j0, j1 = _partida_london()
+    assert adaptador.fase == "Mulligan"
+    assert adaptador.quien_actua() == 0
+    assert len(j0.zonas["Hand"]) == 7 and len(j1.zonas["Hand"]) == 7
+    adaptador.ejecutar_accion(j0, _accion(adaptador, "quedarme"))
+    assert adaptador.quien_actua() == 1
+    adaptador.ejecutar_accion(j1, _accion(adaptador, "quedarme"))
+    assert adaptador.etapa_mulligan == "robo"
+    assert adaptador.fase == "Mulligan"
+    assert len(j0.zonas["Hand"]) == 7 and len(j1.zonas["Hand"]) == 7
+    acciones = adaptador.acciones_legales()
+    assert adaptador.fase == "Principal"
+    assert adaptador.etapa_mulligan is None
+    assert len(j0.zonas["Hand"]) == 8 and len(j1.zonas["Hand"]) == 7
+    assert adaptador.quien_actua() == 0
+    assert all(a["tipo"] not in ("quedarme", "mulligan", "poner_fondo") for a in acciones)
+
+
+def test_london_una_devolucion_baraja_y_fondo() -> None:
+    adaptador = Adaptador(modo_menu="completo")
+    mazo = [criatura(f"C{i}", 1, 1) for i in range(12)]
+    adaptador.montar(list(mazo), list(mazo))
+    j0, j1 = adaptador.jugadores
+    todos = list(j0.zonas["Hand"]) + list(j0.zonas["Library"])
+    j0.zonas["Hand"] = todos[:7]
+    j0.zonas["Library"] = todos[7:]
+    for object_id in j0.zonas["Hand"]:
+        adaptador.partida.objetos[object_id].zona = "Hand"
+    for object_id in j0.zonas["Library"]:
+        adaptador.partida.objetos[object_id].zona = "Library"
+
+    def reversa(xs: list) -> None:
+        xs.reverse()
+
+    original = random.shuffle
+    random.shuffle = reversa
+    try:
+        adaptador.ejecutar_accion(j0, _accion(adaptador, "mulligan"))
+    finally:
+        random.shuffle = original
+    mezclado = (todos[7:] + todos[:7])[::-1]
+    assert j0.zonas["Hand"] == mezclado[:7]
+    assert j0.zonas["Library"] == mezclado[7:]
+    assert len(j0.zonas["Hand"]) == 7
+    assert adaptador.quien_actua() == 1
+
+    adaptador.ejecutar_accion(j1, _accion(adaptador, "quedarme"))
+    assert adaptador.quien_actua() == 0
+    adaptador.ejecutar_accion(j0, _accion(adaptador, "quedarme"))
+    acciones = adaptador.acciones_legales()
+    assert adaptador.modo_decision == "fondo"
+    assert all(a["tipo"] == "poner_fondo" and a.get("carta_id") for a in acciones)
+    elegida = j0.zonas["Hand"][3]
+    mano = list(j0.zonas["Hand"])
+    biblioteca = list(j0.zonas["Library"])
+    adaptador.ejecutar_accion(j0, {"tipo": "poner_fondo", "carta_id": elegida})
+    assert j0.zonas["Hand"] == [oid for oid in mano if oid != elegida]
+    assert len(j0.zonas["Hand"]) == 6
+    assert j0.zonas["Library"] == biblioteca + [elegida]
+    assert j0.zonas["Library"][-1] == elegida
+    assert adaptador.etapa_mulligan == "robo"
+    adaptador.acciones_legales()
+    assert adaptador.fase == "Principal"
+    assert len(j0.zonas["Hand"]) == 7
+    assert j1.zonas["Hand"] and len(j1.zonas["Hand"]) == 7
+    assert elegida == adaptador.jugadores[0].zonas["Library"][-1]
+
+
+def test_london_orden_del_fondo() -> None:
+    adaptador, j0, j1 = _partida_london()
+    adaptador.ejecutar_accion(j0, _accion(adaptador, "mulligan"))
+    adaptador.ejecutar_accion(j1, _accion(adaptador, "quedarme"))
+    adaptador.ejecutar_accion(j0, _accion(adaptador, "mulligan"))
+    adaptador.ejecutar_accion(j0, _accion(adaptador, "quedarme"))
+    assert adaptador.fondo_restante[0] == 2
+    primera = j0.zonas["Hand"][0]
+    segunda = j0.zonas["Hand"][1]
+    adaptador.ejecutar_accion(j0, {"tipo": "poner_fondo", "carta_id": primera})
+    assert adaptador.quien_actua() == 0
+    assert len(j0.zonas["Hand"]) == 6
+    adaptador.ejecutar_accion(j0, {"tipo": "poner_fondo", "carta_id": segunda})
+    assert j0.zonas["Library"][-2] == primera
+    assert j0.zonas["Library"][-1] == segunda
+    assert len(j0.zonas["Hand"]) == 5
+    assert adaptador.etapa_mulligan == "robo"
+
+
+def test_london_quien_se_queda_no_repite() -> None:
+    adaptador, j0, j1 = _partida_london()
+    adaptador.ejecutar_accion(j0, _accion(adaptador, "quedarme"))
+    mano = list(j0.zonas["Hand"])
+    biblioteca = list(j0.zonas["Library"])
+    adaptador.ejecutar_accion(j1, _accion(adaptador, "mulligan"))
+    assert adaptador.quien_actua() == 1
+    assert j0.zonas["Hand"] == mano and j0.zonas["Library"] == biblioteca
+    acciones = adaptador.acciones_legales()
+    assert adaptador.quien_actua() == 1
+    assert {a["tipo"] for a in acciones} <= {"quedarme", "mulligan"}
+    adaptador.ejecutar_accion(j1, _accion(adaptador, "quedarme"))
+    assert adaptador.quien_actua() == 1
+    assert adaptador.modo_decision == "fondo"
+    assert j0.zonas["Hand"] == mano
+    assert all(a["tipo"] == "poner_fondo" for a in adaptador.acciones_legales())
+
+
+def test_london_septima_no_ofrece_otra() -> None:
+    adaptador, j0, j1 = _partida_london()
+    adaptador.ejecutar_accion(j0, _accion(adaptador, "mulligan"))
+    adaptador.ejecutar_accion(j1, _accion(adaptador, "quedarme"))
+    for _ in range(6):
+        acciones = adaptador.acciones_legales()
+        assert adaptador.quien_actua() == 0
+        assert any(a["tipo"] == "mulligan" for a in acciones)
+        adaptador.ejecutar_accion(j0, _accion(adaptador, "mulligan"))
+    acciones = adaptador.acciones_legales()
+    assert adaptador.quien_actua() == 0
+    assert [a["tipo"] for a in acciones] == ["quedarme"]
+    assert adaptador.veces_devueltas[0] == 7
+
+
+def test_london_puente_no_entra() -> None:
+    adaptador = Adaptador(modo_menu="puente")
+    adaptador.montar(mazo_prueba(6, 6), mazo_prueba(6, 6))
+    j0, j1 = adaptador.jugadores
+    assert adaptador.etapa_mulligan is None
+    assert adaptador.fase == "Principal"
+    assert len(j0.zonas["Hand"]) == 8 and len(j1.zonas["Hand"]) == 7
+    tipos = {a["tipo"] for a in adaptador.acciones_legales()}
+    assert "quedarme" not in tipos and "mulligan" not in tipos and "poner_fondo" not in tipos
+
+
+def test_london_starter_sale_a_principal() -> None:
+    from reglas.adaptador import mazo_starter
+
+    for semilla in range(4):
+        random.seed(semilla)
+        adaptador = Adaptador(modo_menu="completo")
+        adaptador.montar(mazo_starter("hare_raising"), mazo_starter("otter_limits"))
+        for _ in range(80):
+            if adaptador.etapa_mulligan in (None, "robo"):
+                break
+            adaptador.paso_aleatorio()
+        else:
+            raise AssertionError(f"semilla {semilla} no salió del mulligan")
+        adaptador.acciones_legales()
+        assert adaptador.etapa_mulligan is None, semilla
+        assert adaptador.fase == "Principal", (semilla, adaptador.fase)
 
 
 def main() -> None:
@@ -1594,6 +1774,13 @@ def main() -> None:
         test_first_strike_abre_prioridad_antes_del_danio_normal,
         test_ventana_vacia_avanza_y_la_limpieza_pide_descarte,
         test_bloque_global_de_pasos,
+        test_london_los_dos_se_quedan,
+        test_london_una_devolucion_baraja_y_fondo,
+        test_london_orden_del_fondo,
+        test_london_quien_se_queda_no_repite,
+        test_london_septima_no_ofrece_otra,
+        test_london_puente_no_entra,
+        test_london_starter_sale_a_principal,
         test_partida_starter_aleatoria,
     ]
     for prueba in pruebas:
