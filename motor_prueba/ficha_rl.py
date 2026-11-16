@@ -88,6 +88,13 @@ _FASE_A_ONTO = {
     "Declarar Atacantes": "DeclareAttackers",
     "Declarar Bloqueadores": "DeclareBlockers",
     "Descartar": "Cleanup",
+    "Mantenimiento": "Upkeep",
+    "Robar": "DrawStep",
+    "Inicio del combate": "BeginningOfCombat",
+    "Daño de combate": "CombatDamage",
+    "Fin del combate": "EndOfCombat",
+    "Paso final": "EndStep",
+    "Limpieza": "Cleanup",
 }
 
 MAX_HABILIDADES = 4

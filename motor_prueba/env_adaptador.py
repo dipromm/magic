@@ -146,10 +146,7 @@ class MagicAdaptadorEnv(AECEnv):
             self.current_legal_actions = []
             self._truncate_por_acciones()
             return
-        if self.adaptador.fase == "Declarar Bloqueadores":
-            self.agent_selection = self.agents[1 - self.adaptador.indice_activo]
-        else:
-            self.agent_selection = self.agents[self.adaptador.indice_activo]
+        self.agent_selection = self.agents[self.adaptador.quien_actua()]
 
     def _truncate_por_acciones(self):
         self._truncated_por_acciones = True

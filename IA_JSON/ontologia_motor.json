@@ -116,6 +116,7 @@
     "Ward"
   ],
   "PhaseAndStep": [
+    "BeginningOfCombat",
     "BeginningPhase",
     "Cleanup",
     "CombatDamage",
@@ -123,6 +124,7 @@
     "DeclareAttackers",
     "DeclareBlockers",
     "DrawStep",
+    "EndOfCombat",
     "EndStep",
     "EndingPhase",
     "MainPhase",
