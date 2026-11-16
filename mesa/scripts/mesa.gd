@@ -120,11 +120,11 @@ func _mundo() -> void:
 	_ovalo()
 
 	_camara = Camera3D.new()
-	# Distancia media: se sigue mirando hacia abajo, pero el tapete queda cerca.
-	_camara.position = Vector3(0, 8.8, -2.7)
-	_camara.fov = 42
+	# Distancia media, un poco más alta para dejar una franja libre abajo.
+	_camara.position = Vector3(0, 10.0, -4.15)
+	_camara.fov = 46
 	add_child(_camara)
-	_camara.look_at(Vector3(0, 0, 0.85), Vector3.UP)
+	_camara.look_at(Vector3(0, 0, -0.3), Vector3.UP)
 
 	_marco = Node3D.new()
 	add_child(_marco)
@@ -504,23 +504,25 @@ func _poner_mano_propia(cartas: Array, legales: Dictionary, puestos: Dictionary)
 	var adelante := (-base.z).normalized()
 	var derecha := base.x.normalized()
 	var arriba := base.y.normalized()
-	var distancia := 3.5
+	# Lejos de la lente y baja: solo la franja inferior, sin tapar las tierras.
+	var distancia := 4.8
 	var mitad := distancia * tan(deg_to_rad(_camara.fov) * 0.5)
-	var escala := 0.6
+	var fraccion := 0.125
+	var escala := fraccion * 2.0 * mitad / 0.88
 	var alto := 0.88 * escala
-	var margen := 0.16
-	# La carta entera queda dentro de la pantalla, pegada al borde inferior.
-	var centro := _camara.global_position + adelante * distancia + arriba * (-mitad + alto * 0.5 + margen)
+	var tope := 0.80
+	var arriba_tope := (1.0 - 2.0 * tope) * mitad
+	var centro := _camara.global_position + adelante * distancia + arriba * (arriba_tope - alto * 0.5)
 	_ancla_mano = centro
 	var ancho := 0.63 * escala
-	var paso := ancho * 0.84
+	var paso := ancho * 0.9
 	if n > 1:
-		paso = minf(paso, 2.45 / float(n - 1))
+		paso = minf(paso, 2.15 / float(n - 1))
 	for i in n:
 		var t := 0.0 if n <= 1 else float(i) / float(n - 1) - 0.5
 		var x := (float(i) - float(n - 1) * 0.5) * paso
-		var curva := t * t * alto * 0.1
-		var pos := centro + derecha * x - arriba * curva - adelante * float(i) * 0.012
+		var curva := t * t * alto * 0.05
+		var pos := centro + derecha * x - arriba * curva - adelante * float(i) * 0.008
 		var nodo = _carta(cartas[i], legales, {})
 		if nodo == null:
 			continue
@@ -528,8 +530,8 @@ func _poner_mano_propia(cartas: Array, legales: Dictionary, puestos: Dictionary)
 		nodo.en_mano = true
 		nodo.base_pos = pos
 		nodo.base_escala = escala
-		nodo.base_basis = base * Basis(Vector3(0, 0, 1), -t * 0.32)
-		nodo.hover_offset = arriba * (alto * 0.7) - adelante * 0.1
+		nodo.base_basis = base * Basis(Vector3(0, 0, 1), -t * 0.2)
+		nodo.hover_offset = arriba * (alto * 0.9) - adelante * 0.05
 		if nuevo:
 			nodo.position = pos
 			nodo.transform.basis = nodo.base_basis
@@ -626,7 +628,7 @@ func _poner_pila(pila: Array, legales: Dictionary, puestos: Dictionary) -> void:
 
 func _poner_zonas(estado: Dictionary, puestos: Dictionary, legales: Dictionary) -> void:
 	var sitios := {
-		"tu": {"cementerio": Vector3(3.7, 0.04, -0.62), "exilio": Vector3(3.15, 0.04, -0.3), "mazo": Vector3(-3.7, 0.04, -0.62)},
+		"tu": {"cementerio": Vector3(3.15, 0.04, -1.35), "exilio": Vector3(3.15, 0.04, -0.3), "mazo": Vector3(-3.15, 0.04, -1.35)},
 		"rival": {"cementerio": Vector3(-3.15, 0.04, 2.2), "exilio": Vector3(-3.15, 0.04, 1.15), "mazo": Vector3(3.15, 0.04, 2.2)},
 	}
 	for quien in PackedStringArray(["tu", "rival"]):
@@ -735,7 +737,7 @@ func _viajes(eventos: Array, puestos: Dictionary) -> void:
 
 
 func _pos_mazo(asiento: String) -> Vector3:
-	return Vector3(-3.7, 0.08, -0.62) if asiento == "tu" else Vector3(3.15, 0.08, 2.2)
+	return Vector3(-3.15, 0.08, -1.35) if asiento == "tu" else Vector3(3.15, 0.08, 2.2)
 
 
 func _pos_mano(asiento: String) -> Vector3:
