@@ -55,6 +55,15 @@ class Adaptador:
         self.bloqueador_pendiente: str | None = None
         self.decision: dict[str, Any] | None = None
         self.modo_decision = "menu"
+        self.prioridad_idx = 0
+        self.pases = 0
+        self.ataques_confirmados = False
+        self.bloqueos_confirmados = False
+        self.segunda_principal = False
+        self.danio_fase = "ninguno"
+        self.actor_idx = 0
+        self._en_autopase = False
+        self._objeto_en_resolucion: str | None = None
 
     def montar(self, mazo_p0: list[Definicion], mazo_p1: list[Definicion]) -> None:
         self.partida = Partida()
@@ -70,6 +79,15 @@ class Adaptador:
         self.bloqueador_pendiente = None
         self.decision = None
         self.modo_decision = "menu"
+        self.prioridad_idx = 0
+        self.pases = 0
+        self.ataques_confirmados = False
+        self.bloqueos_confirmados = False
+        self.segunda_principal = False
+        self.danio_fase = "ninguno"
+        self.actor_idx = 0
+        self._en_autopase = False
+        self._objeto_en_resolucion = None
         self.partida.interceptar = self.modo_menu == "completo"
         exigir_resolutores(list(mazo_p0) + list(mazo_p1))
         for jugador, mazo in zip(self.jugadores, (mazo_p0, mazo_p1)):
@@ -257,17 +275,57 @@ class Adaptador:
         libres = self.maná_disponible(jugador) - coste.total
         return max(0, min(libres, 5))
 
+    @property
+    def _con_prioridad(self) -> bool:
+        return self.modo_menu == "completo"
+
+    def _idx(self, jugador: Jugador) -> int:
+        return 0 if jugador is self.jugadores[0] else 1
+
+    def _en_declaracion(self) -> bool:
+        """Elegir atacantes o bloqueadores, sin instantáneos entre criaturas.
+
+        Si la pila tiene algo, primero se pasa prioridad y se resuelve el tope.
+        """
+        if not self._con_prioridad or self.partida.pila:
+            return False
+        if self.fase == "Declarar Atacantes" and not self.ataques_confirmados:
+            return True
+        if self.fase == "Declarar Bloqueadores" and not self.bloqueos_confirmados:
+            return True
+        return False
+
+    def quien_actua(self) -> int:
+        """Índice de quien debe elegir: prioridad, declaración o descarte."""
+        if self.decision is not None:
+            return self.actor_idx
+        if self.fase == "Descartar":
+            return self.indice_activo
+        if self._con_prioridad and self._en_declaracion():
+            if self.fase == "Declarar Bloqueadores":
+                return 1 - self.indice_activo
+            return self.indice_activo
+        if self._con_prioridad:
+            return self.prioridad_idx
+        if self.fase == "Declarar Bloqueadores":
+            return 1 - self.indice_activo
+        return self.indice_activo
+
+    def _fijar_actor(self, controlador: str) -> None:
+        self.actor_idx = 0 if controlador == self.jugadores[0].id else 1
+
     def acciones_legales(self, jugador: Jugador | None = None) -> list[dict[str, Any]]:
         if self.decision is not None:
-            return self._acciones_decision(jugador or self.jugador_activo())
-        self._avanzar_fases_vacias()
-        if self.decision is not None:
-            return self._acciones_decision(jugador or self.jugador_activo())
-        if self.fase == "Declarar Bloqueadores":
-            quien = self.defensor()
+            return self._acciones_decision(self.jugadores[self.quien_actua()])
+        if self._con_prioridad:
+            self._autopasar_completo()
         else:
-            quien = self.jugador_activo()
-        return self._enumerar(quien)
+            self._avanzar_fases_vacias()
+        if self.decision is not None:
+            return self._acciones_decision(self.jugadores[self.quien_actua()])
+        if self.terminada():
+            return []
+        return self._enumerar(self.jugadores[self.quien_actua()])
 
     def _avanzar_fases_vacias(self) -> None:
         """Principal, atacantes y bloqueadores se saltan si solo queda pasar o confirmar."""
@@ -295,11 +353,312 @@ class Adaptador:
             return tipo == "resolver_combate"
         return False
 
+    def _dar_prioridad(self, idx: int) -> None:
+        self._acciones_de_estado()
+        self.prioridad_idx = idx
+        self.pases = 0
+
+    def _es_instantanea(self, carta: Objeto) -> bool:
+        if "Instant" in carta.definicion.card_types:
+            return True
+        return self.partida.tiene_keyword(carta, "Flash")
+
+    def _conjuro_lento(self, jugador: Jugador) -> bool:
+        """Conjuro, permanente, tierra y Equip: tu principal, pila vacía, eres el activo."""
+        return (
+            self.fase == "Principal"
+            and not self.partida.pila
+            and jugador.id == self.jugador_activo().id
+        )
+
+    def _es_equipar(self, habilidad: dict[str, Any]) -> bool:
+        return habilidad.get("implements_keyword") == "Equip"
+
+    def _menu_prioridad(self, jugador: Jugador) -> list[dict[str, Any]]:
+        acciones: list[dict[str, Any]] = [{
+            "tipo": "pasar_fase",
+            "descripcion": "Pasar prioridad",
+        }]
+        lento = self._conjuro_lento(jugador)
+        origenes = list(jugador.zonas["Hand"]) + [
+            oid for oid in jugador.zonas["Exile"]
+            if self.partida.carta_jugable_por_permiso(self.partida.objetos[oid], jugador.id)
+        ]
+        for object_id in origenes:
+            carta = self.partida.objetos[object_id]
+            if "Land" in carta.definicion.card_types:
+                if lento and carta.zona == "Hand" and self.tierras_jugadas < 1:
+                    acciones.append({
+                        "tipo": "jugar_carta",
+                        "carta_id": carta.object_id,
+                        "descripcion": f"Jugar tierra: {carta.definicion.nombre} [{carta.object_id}]",
+                    })
+                continue
+            rapida = self._es_instantanea(carta)
+            if not rapida and not lento:
+                continue
+            x = self._x_automatica(jugador, carta) if parse_mana(carta.definicion.mana_cost).tiene_x else 0
+            coste = self.partida.coste_de_lanzar(carta, x)
+            if not self.puede_pagar(jugador, coste):
+                continue
+            if not self._tiene_objetivos_de_lanzamiento(carta):
+                continue
+            if "Creature" in carta.definicion.card_types:
+                desc = (
+                    f"Jugar criatura: {carta.definicion.nombre} "
+                    f"(Coste: {coste.total}) [{carta.object_id}]"
+                )
+            else:
+                desc = (
+                    f"Jugar: {carta.definicion.nombre} "
+                    f"(Coste: {coste.total}) [{carta.object_id}]"
+                )
+            acciones.append({
+                "tipo": "jugar_carta",
+                "carta_id": carta.object_id,
+                "x": x,
+                "descripcion": desc,
+            })
+        for object_id in jugador.zonas["Battlefield"]:
+            fuente = self.partida.objetos[object_id]
+            for habilidad in fuente.definicion.abilities:
+                if habilidad["ability_type"] != "ActivatedAbility":
+                    continue
+                if "Battlefield" not in habilidad["zones_active"]:
+                    continue
+                if self._es_habilidad_de_mana(habilidad):
+                    continue
+                if self._es_equipar(habilidad) and not lento:
+                    continue
+                if not self._puede_activar(jugador, fuente, habilidad):
+                    continue
+                acciones.append({
+                    "tipo": "activar",
+                    "carta_id": fuente.object_id,
+                    "habilidad": habilidad["ability_order"],
+                    "descripcion": (
+                        f"Activar {fuente.definicion.nombre} "
+                        f"#{habilidad['ability_order']} [{fuente.object_id}]"
+                    ),
+                })
+        return acciones
+
+    def _autopasar_completo(self) -> None:
+        """Si solo se puede pasar, pasan los dos. El menú queda cuando hay algo que hacer."""
+        if self._en_autopase or not self._con_prioridad:
+            return
+        self._en_autopase = True
+        try:
+            for _ in range(128):
+                if self.decision is not None or self.fase == "Descartar":
+                    return
+                if self.terminada():
+                    if self.partida.pila:
+                        self._vaciar_pila()
+                    return
+                if self._en_declaracion():
+                    quien = (
+                        self.defensor()
+                        if self.fase == "Declarar Bloqueadores"
+                        else self.jugador_activo()
+                    )
+                    acciones = self._enumerar(quien)
+                    if self._solo_confirmacion(acciones):
+                        self._dispatch(quien, acciones[0])
+                        continue
+                    return
+                jugador = self.jugadores[self.prioridad_idx]
+                acciones = self._enumerar(jugador)
+                if len(acciones) != 1 or acciones[0]["tipo"] != "pasar_fase":
+                    return
+                self._dispatch(jugador, acciones[0])
+        finally:
+            self._en_autopase = False
+
+    def _pasar(self, jugador: Jugador) -> None:
+        if self._idx(jugador) != self.prioridad_idx:
+            raise RuntimeError("no tiene la prioridad")
+        self.pases += 1
+        if self.pases < 2:
+            self.prioridad_idx = 1 - self.prioridad_idx
+            return
+        self.pases = 0
+        if self.partida.pila:
+            self._resolver_un_objeto()
+            if self.decision is not None:
+                return
+            self.prioridad_idx = self.indice_activo
+            return
+        self._vaciar_maná()
+        self._avanzar_paso()
+
+    def _id_tope(self) -> str | None:
+        if not self.partida.pila:
+            return None
+        return self.partida.pila[-1].object_id
+
+    def _resolver_un_objeto(self) -> None:
+        if not self.partida.pila:
+            return
+        self._objeto_en_resolucion = self._id_tope()
+        self._seguir_objeto_actual()
+        if self.decision is None:
+            self._objeto_en_resolucion = None
+            self._acciones_de_estado()
+
+    def _seguir_objeto_actual(self) -> None:
+        oid = self._objeto_en_resolucion or self._id_tope()
+        if oid is None:
+            return
+        self._objeto_en_resolucion = oid
+        for _ in range(16):
+            if self._id_tope() != oid:
+                self._objeto_en_resolucion = None
+                return
+            if self._preflight():
+                return
+            try:
+                self.partida.resolver_tope()
+            except DecisionRequerida as exc:
+                self._abrir_eleccion(exc)
+                return
+            self._objeto_en_resolucion = None
+            return
+
+    def _despues_de_eleccion(self) -> None:
+        if not self._con_prioridad:
+            self._vaciar_pila()
+            return
+        self._seguir_objeto_actual()
+        if self.decision is not None:
+            return
+        self._acciones_de_estado()
+        self.prioridad_idx = self.indice_activo
+        self.pases = 0
+
+    def _avanzar_paso(self) -> None:
+        if self.fase == "Mantenimiento":
+            self._entrar_robo()
+        elif self.fase == "Robar":
+            self._entrar_principal(False)
+        elif self.fase == "Principal" and not self.segunda_principal:
+            self._entrar_inicio_combate()
+        elif self.fase == "Inicio del combate":
+            self._entrar_declarar_atacantes()
+        elif self.fase == "Declarar Atacantes":
+            self.ataques_confirmados = False
+            if self.atacantes:
+                self.fase = "Declarar Bloqueadores"
+                self.bloqueos_confirmados = False
+                self.bloqueador_pendiente = None
+                return
+            self._entrar_fin_combate()
+        elif self.fase == "Declarar Bloqueadores":
+            self.bloqueos_confirmados = False
+            self._entrar_danio()
+        elif self.fase == "Daño de combate":
+            if self.danio_fase == "first":
+                self._aplicar_danio(False)
+                self.danio_fase = "normal"
+                self._dar_prioridad(self.indice_activo)
+                return
+            self._entrar_fin_combate()
+        elif self.fase == "Fin del combate":
+            self._entrar_principal(True)
+        elif self.fase == "Principal":
+            self._entrar_paso_final()
+        elif self.fase == "Paso final":
+            self._entrar_limpieza()
+        elif self.fase in ("Limpieza", "Descartar"):
+            self._siguiente_turno()
+
+    def _entrar_robo(self) -> None:
+        self.fase = "Robar"
+        self._robar(self.jugador_activo(), 1)
+        if self.terminada():
+            return
+        self._dar_prioridad(self.indice_activo)
+
+    def _entrar_principal(self, segunda: bool) -> None:
+        self.fase = "Principal"
+        self.segunda_principal = segunda
+        self._dar_prioridad(self.indice_activo)
+
+    def _entrar_inicio_combate(self) -> None:
+        self.fase = "Inicio del combate"
+        self._dar_prioridad(self.indice_activo)
+
+    def _entrar_declarar_atacantes(self) -> None:
+        self.fase = "Declarar Atacantes"
+        self.ataques_confirmados = False
+        self.atacantes = []
+        self.bloqueos = {}
+        self.bloqueos_confirmados = False
+        self.bloqueador_pendiente = None
+
+    def _entrar_fin_combate(self) -> None:
+        self.fase = "Fin del combate"
+        self.danio_fase = "ninguno"
+        self._dar_prioridad(self.indice_activo)
+
+    def _entrar_paso_final(self) -> None:
+        self.fase = "Paso final"
+        self._dar_prioridad(self.indice_activo)
+
+    def _entrar_limpieza(self) -> None:
+        if len(self.jugador_activo().zonas["Hand"]) > 7:
+            self.fase = "Descartar"
+            self.modo_decision = "menu"
+            return
+        self._cerrar_limpieza()
+
+    def _cerrar_limpieza(self) -> None:
+        self._acciones_de_estado()
+        if self.partida.pila:
+            self.fase = "Limpieza"
+            self._dar_prioridad(self.indice_activo)
+            return
+        self._siguiente_turno()
+
+    def _entrar_danio(self) -> None:
+        self.fase = "Daño de combate"
+        participantes = [
+            self.partida.objetos[oid]
+            for oid in list(self.atacantes) + list(self.bloqueos)
+            if oid in self.partida.objetos and self.partida.objetos[oid].zona == "Battlefield"
+        ]
+        if any(self._tiene_first_strike(carta) for carta in participantes):
+            self._aplicar_danio(True)
+            self.danio_fase = "first"
+        else:
+            self._aplicar_danio(False)
+            self.danio_fase = "normal"
+        if self.terminada():
+            return
+        self._dar_prioridad(self.indice_activo)
+
+    def _aplicar_danio(self, paso_first: bool) -> None:
+        self._paso_danio(paso_first, resolver=False)
+        self._acciones_de_estado()
+
     def _enumerar(self, jugador: Jugador) -> list[dict[str, Any]]:
-        if self.partida.pila and self.decision is None:
+        if self.partida.pila and self.decision is None and not self._con_prioridad:
             raise RuntimeError("la pila no está vacía al enumerar el menú")
         acciones: list[dict[str, Any]] = []
         self.modo_decision = "menu"
+        # La declaración no se mezcla con la pila: un instantáneo en ese paso
+        # se responde antes de seguir eligiendo criaturas.
+        en_ataques = self.fase == "Declarar Atacantes" and not self.partida.pila and not (
+            self._con_prioridad and self.ataques_confirmados
+        )
+        en_bloqueos = self.fase == "Declarar Bloqueadores" and not self.partida.pila and not (
+            self._con_prioridad and self.bloqueos_confirmados
+        )
+        if self._con_prioridad and self.fase != "Descartar" and not en_ataques and not en_bloqueos:
+            acciones = self._menu_prioridad(jugador)
+            if not self.medir and len(acciones) > self.max_acciones:
+                raise DemasiadasAcciones(len(acciones))
+            return acciones
         if self.fase == "Principal":
             acciones.append({"tipo": "pasar_fase", "descripcion": "Pasar a Declarar Atacantes"})
             for object_id in list(jugador.zonas["Hand"]) + [
@@ -645,6 +1004,12 @@ class Adaptador:
         return True
 
     def ejecutar_accion(self, jugador: Jugador, accion: dict[str, Any]) -> None:
+        self.actor_idx = self._idx(jugador)
+        self._dispatch(jugador, accion)
+        if self._con_prioridad:
+            self._autopasar_completo()
+
+    def _dispatch(self, jugador: Jugador, accion: dict[str, Any]) -> None:
         tipo = accion["tipo"]
         if tipo == "jugar_carta":
             self._iniciar_o_jugar(jugador, accion["carta_id"], x=int(accion.get("x") or 0))
@@ -676,23 +1041,35 @@ class Adaptador:
         elif tipo == "activar":
             self._activar(jugador, accion["carta_id"], int(accion["habilidad"]))
         elif tipo == "pasar_fase":
-            self._vaciar_maná()
-            self.fase = "Declarar Atacantes"
+            if self._con_prioridad:
+                self._pasar(jugador)
+            else:
+                self._vaciar_maná()
+                self.fase = "Declarar Atacantes"
         elif tipo == "declarar_atacante":
             carta = self.partida.objetos[accion["carta_id"]]
             if not self.partida.tiene_keyword(carta, "Vigilance"):
                 carta.girada = True
             carta.atacando = True
             self.atacantes.append(carta.object_id)
-            self.partida.disparar("Attacks", carta)
-            self._vaciar_pila()
+            if not self._con_prioridad:
+                self.partida.disparar("Attacks", carta)
+                self._vaciar_pila()
         elif tipo == "finalizar_ataques":
-            self._vaciar_maná()
-            self.bloqueador_pendiente = None
-            if self.atacantes:
-                self.fase = "Declarar Bloqueadores"
+            if not self._con_prioridad:
+                self._vaciar_maná()
+                self.bloqueador_pendiente = None
+                if self.atacantes:
+                    self.fase = "Declarar Bloqueadores"
+                else:
+                    self._cerrar_turno()
             else:
-                self._cerrar_turno()
+                self.ataques_confirmados = True
+                for attacker_id in list(self.atacantes):
+                    atacante = self.partida.objetos[attacker_id]
+                    if atacante.zona == "Battlefield":
+                        self.partida.disparar("Attacks", atacante)
+                self._dar_prioridad(self.indice_activo)
         elif tipo == "declarar_bloqueo":
             self.bloqueos[accion["blocker_id"]] = accion["attacker_id"]
             self.partida.objetos[accion["blocker_id"]].bloqueando = True
@@ -706,16 +1083,27 @@ class Adaptador:
             self.bloqueador_pendiente = None
         elif tipo == "resolver_combate":
             self.bloqueador_pendiente = None
-            self._resolver_combate()
-            self._vaciar_maná()
-            self._cerrar_turno()
+            if not self._con_prioridad:
+                self._resolver_combate()
+                self._vaciar_maná()
+                self._cerrar_turno()
+            else:
+                self.bloqueos_confirmados = True
+                for blocker_id in list(self.bloqueos):
+                    bloqueador = self.partida.objetos.get(blocker_id)
+                    if bloqueador is not None and bloqueador.zona == "Battlefield":
+                        self.partida.disparar("Blocks", bloqueador)
+                self._dar_prioridad(self.indice_activo)
         elif tipo == "descartar":
             carta = self.partida.objetos[accion["carta_id"]]
             if carta.zona != "Hand" or carta.controlador != jugador.id:
                 raise RuntimeError("descarte ilegal")
             self.partida.mover(carta, "Graveyard")
             if len(jugador.zonas["Hand"]) <= 7:
-                self._siguiente_turno()
+                if self._con_prioridad:
+                    self._cerrar_limpieza()
+                else:
+                    self._siguiente_turno()
 
     def _iniciar_o_jugar(
         self,
@@ -770,6 +1158,9 @@ class Adaptador:
         if "Land" in carta.definicion.card_types:
             self.partida.entrar(carta)
             self.tierras_jugadas += 1
+            if self._con_prioridad:
+                self._dar_prioridad(self._idx(jugador))
+                return
             self._vaciar_pila()
             return
         if objetivos is None:
@@ -784,6 +1175,9 @@ class Adaptador:
                 self._pagar(jugador, parse_mana(extra))
             carta.coste_opcional_pagado = True
         self.partida.lanzar(carta, x=x, objetivos=objetivos)
+        if self._con_prioridad:
+            self._dar_prioridad(self._idx(jugador))
+            return
         self._vaciar_pila()
 
     def _activar(
@@ -836,6 +1230,9 @@ class Adaptador:
         if sacrificar:
             self.partida.disparar("Sacrifice", fuente)
             self.partida.mover(fuente, "Graveyard")
+        if self._con_prioridad:
+            self._dar_prioridad(self._idx(jugador))
+            return
         self._vaciar_pila()
 
     def _vaciar_pila(self) -> None:
@@ -857,6 +1254,7 @@ class Adaptador:
         item = self.partida.pila[-1]
         if isinstance(item, Objeto) and getattr(item, "_reetiquetar", False):
             if self.modo_menu == "completo" and self._ranuras(item):
+                self._fijar_actor(item.controlador)
                 self.decision = {
                     "tipo": "reetiquetar",
                     "carta_id": item.object_id,
@@ -904,6 +1302,7 @@ class Adaptador:
             if item.slot_actual >= len(ranuras):
                 item.objetivos_cerrados = True
             return False
+        self._fijar_actor(item.controlador)
         self.decision = {
             "tipo": "objetivos_n",
             "item_id": item.object_id,
@@ -918,6 +1317,8 @@ class Adaptador:
         return True
 
     def _abrir_eleccion(self, exc: DecisionRequerida) -> None:
+        if self.partida.pila:
+            self._fijar_actor(self.partida.pila[-1].controlador)
         tipo = exc.tipo
         ids = [o.object_id for o in exc.opciones if isinstance(o, Objeto)]
         if tipo == "optional_effect":
@@ -950,7 +1351,7 @@ class Adaptador:
         self.partida.respuesta_tipo = tipo_elegir
         self.partida.respuesta_lista = True
         self.decision = None
-        self._vaciar_pila()
+        self._despues_de_eleccion()
 
     def _elegir_objetivo(self, jugador: Jugador, accion: dict[str, Any]) -> None:
         assert self.decision is not None
@@ -1008,7 +1409,7 @@ class Adaptador:
         )):
             item.objetivos_cerrados = True
         self.decision = None
-        self._vaciar_pila()
+        self._despues_de_eleccion()
 
     def _anotar_scry(self, accion: dict[str, Any]) -> None:
         assert self.decision is not None
@@ -1026,7 +1427,7 @@ class Adaptador:
         carta = self.partida.objetos[self.decision["carta_id"]]
         carta._reetiquetar = False  # type: ignore[attr-defined]
         self.decision = None
-        self._vaciar_pila()
+        self._despues_de_eleccion()
 
     def _anotar_reetiqueta(self, objetivo: Objeto) -> None:
         assert self.decision is not None
@@ -1043,7 +1444,7 @@ class Adaptador:
         }
         carta._reetiquetar = False  # type: ignore[attr-defined]
         self.decision = None
-        self._vaciar_pila()
+        self._despues_de_eleccion()
 
     def _vaciar_maná(self) -> None:
         for jugador in self.jugadores:
@@ -1120,13 +1521,16 @@ class Adaptador:
             return True
         return not primero
 
-    def _danio_jugador(self, fuente: Objeto, jugador: Jugador, n: int) -> None:
+    def _danio_jugador(
+        self, fuente: Objeto, jugador: Jugador, n: int, *, resolver: bool = True,
+    ) -> None:
         if n <= 0:
             return
         jugador.vida -= n
         representante = self.partida.representantes[jugador.id]
         self.partida.disparar("DealsDamage", representante, solo_fuente=fuente)
-        self._vaciar_pila()
+        if resolver:
+            self._vaciar_pila()
 
     def _resolver_combate(self) -> None:
         participantes = [
@@ -1140,7 +1544,7 @@ class Adaptador:
         self._paso_danio(False)
         self._acciones_de_estado()
 
-    def _paso_danio(self, paso_first: bool) -> None:
+    def _paso_danio(self, paso_first: bool, *, resolver: bool = True) -> None:
         defensor = self.defensor()
         for attacker_id in list(self.atacantes):
             atacante = self.partida.objetos[attacker_id]
@@ -1152,14 +1556,18 @@ class Adaptador:
                 bloqueador = None
             if bloqueador is None:
                 if self._golpea_en_paso(atacante, paso_first):
-                    self._danio_jugador(atacante, defensor, self.partida.poder(atacante))
+                    self._danio_jugador(
+                        atacante, defensor, self.partida.poder(atacante), resolver=resolver,
+                    )
                 continue
             poder_atq = self.partida.poder(atacante)
             res_blk = self.partida.resistencia(bloqueador)
             if self._golpea_en_paso(atacante, paso_first):
                 bloqueador.danio += poder_atq
                 if self.partida.tiene_keyword(atacante, "Trample") and poder_atq > res_blk:
-                    self._danio_jugador(atacante, defensor, poder_atq - res_blk)
+                    self._danio_jugador(
+                        atacante, defensor, poder_atq - res_blk, resolver=resolver,
+                    )
             if self._golpea_en_paso(bloqueador, paso_first):
                 atacante.danio += self.partida.poder(bloqueador)
 
@@ -1226,10 +1634,14 @@ class Adaptador:
         self.partida.limpiar_fin_de_turno(activo.id)
         self._vaciar_maná()
         self.indice_activo = 1 - self.indice_activo
-        self.fase = "Principal"
         self.atacantes = []
         self.bloqueos = {}
+        self.bloqueador_pendiente = None
+        self.ataques_confirmados = False
+        self.bloqueos_confirmados = False
         self.tierras_jugadas = 0
+        self.segunda_principal = False
+        self.danio_fase = "ninguno"
         self.modo_decision = "menu"
         jugador = self.jugador_activo()
         for object_id in jugador.zonas["Battlefield"]:
@@ -1239,7 +1651,12 @@ class Adaptador:
             carta.girada = False
             carta.danio = 0
             carta.entro_este_turno = False
-        self._robar(jugador, 1)
+        if not self._con_prioridad:
+            self.fase = "Principal"
+            self._robar(jugador, 1)
+            return
+        self.fase = "Mantenimiento"
+        self._dar_prioridad(self.indice_activo)
 
     def _robar(self, jugador: Jugador, n: int) -> None:
         for _ in range(n):
@@ -1261,11 +1678,7 @@ class Adaptador:
             raise
         if not acciones or self.terminada():
             return
-        if self.fase == "Declarar Bloqueadores":
-            jugador = self.defensor()
-        else:
-            jugador = self.jugador_activo()
-        self.ejecutar_accion(jugador, random.choice(acciones))
+        self.ejecutar_accion(self.jugadores[self.quien_actua()], random.choice(acciones))
 
 
 def mazo_prueba(tierras: int = 20, criaturas: int = 20) -> list[Definicion]:

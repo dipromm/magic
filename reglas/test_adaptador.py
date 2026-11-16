@@ -26,7 +26,9 @@ from ficha_rl import (  # noqa: E402
     EFFECT_DIM,
     EFFECTS,
     EVENTS,
+    GLOBAL_DIM,
     HEADER_DIM,
+    PHASES,
     ZONES,
     construir_slots,
     encode_definicion,
@@ -102,6 +104,51 @@ def _efecto(tipo: str, info: dict, **parametros) -> dict:
         "effect_conditions": [],
         "parameters": parametros,
     }
+
+
+def _info_criatura() -> dict:
+    return {
+        "requires_target": True,
+        "target_owner": None,
+        "target_zone": "Battlefield",
+        "target_count": {"min": 1, "max": 1},
+        "restrictions": {
+            "logical_operator": "AND",
+            "types": ["Creature"],
+            "subtypes": [],
+            "supertypes": [],
+            "modifiers": [],
+        },
+    }
+
+
+def _instantaneo(nombre: str, efectos: list[dict]) -> Definicion:
+    base = _conjuro(nombre, efectos)
+    return Definicion(
+        nombre=base.nombre,
+        oracle_text="",
+        mana_cost=None,
+        supertypes=base.supertypes,
+        card_types=("Instant",),
+        subtypes=(),
+        keywords=(),
+        power=None,
+        toughness=None,
+        abilities=base.abilities,
+    )
+
+
+def _por_tipo(acciones: list[dict], tipo: str) -> dict:
+    for accion in acciones:
+        if accion["tipo"] == tipo:
+            return accion
+    raise AssertionError(f"no hay {tipo} en {[a['tipo'] for a in acciones]}")
+
+
+def _pasar(adaptador: Adaptador) -> None:
+    acciones = adaptador.acciones_legales()
+    jugador = adaptador.jugadores[adaptador.quien_actua()]
+    adaptador.ejecutar_accion(jugador, _por_tipo(acciones, "pasar_fase"))
 
 
 def _conjuro(nombre: str, efectos: list[dict]) -> Definicion:
@@ -350,7 +397,7 @@ def _estado_de_acciones(fase: str, acciones: list[dict]) -> tuple[str, bool, boo
 def test_equivalencia_con_motor() -> None:
     semilla = 7
     random.seed(semilla)
-    adaptador = Adaptador()
+    adaptador = Adaptador(modo_menu="puente")
     adaptador.montar(mazo_prueba(6, 6), mazo_prueba(6, 6))
 
     random.seed(semilla)
@@ -634,6 +681,8 @@ def test_byrke_hasta_dos_y_dobla_al_atacar() -> None:
     limpia.entro_este_turno = False
     adaptador.fase = "Declarar Atacantes"
     adaptador.ejecutar_accion(j0, {"tipo": "declarar_atacante", "carta_id": marcada.object_id})
+    assert marcada.contadores["PlusOnePlusOne"] == 1
+    adaptador.ejecutar_accion(j0, {"tipo": "finalizar_ataques"})
     assert marcada.contadores["PlusOnePlusOne"] == 2
     assert limpia.contadores.get("PlusOnePlusOne", 0) == 0
 
@@ -686,6 +735,9 @@ def test_finneas_contadores_y_robo() -> None:
     mano = len(j0.zonas["Hand"])
     adaptador.fase = "Declarar Atacantes"
     adaptador.ejecutar_accion(j0, {"tipo": "declarar_atacante", "carta_id": finneas.object_id})
+    assert ficha.contadores.get("PlusOnePlusOne", 0) == 0
+    assert robable.zona == "Library"
+    adaptador.ejecutar_accion(j0, {"tipo": "finalizar_ataques"})
     assert ficha.contadores.get("PlusOnePlusOne") == 1
     assert liebre.contadores.get("PlusOnePlusOne") == 1
     assert oso.contadores.get("PlusOnePlusOne", 0) == 0
@@ -993,20 +1045,29 @@ def test_thieving_otter_roba_solo_su_dano() -> None:
 
 
 def test_waterspout_vuela_si_otra_entro() -> None:
-    cartas, adaptador, j0, _j1 = _mesa()
+    cartas, adaptador, j0, j1 = _mesa()
     guardian = adaptador.partida.instanciar(cartas["Waterspout Warden"], j0.id, "Battlefield")
     guardian.entro_este_turno = False
     otra = adaptador.partida.instanciar(criatura("Otra", 1, 1), j0.id, "Battlefield")
     otra.entro_este_turno = True
+    companera = adaptador.partida.instanciar(criatura("Compañera", 1, 1), j0.id, "Battlefield")
+    companera.entro_este_turno = False
+    adaptador.partida.instanciar(criatura("Muro", 1, 1, keywords=("Flying",)), j1.id, "Battlefield")
     adaptador.fase = "Declarar Atacantes"
     adaptador.ejecutar_accion(j0, {"tipo": "declarar_atacante", "carta_id": guardian.object_id})
+    assert not adaptador.partida.tiene_keyword(guardian, "Flying")
+    adaptador.ejecutar_accion(j0, {"tipo": "finalizar_ataques"})
     assert adaptador.partida.tiene_keyword(guardian, "Flying")
 
-    cartas, adaptador, j0, _j1 = _mesa()
+    cartas, adaptador, j0, j1 = _mesa()
     guardian = adaptador.partida.instanciar(cartas["Waterspout Warden"], j0.id, "Battlefield")
     guardian.entro_este_turno = False
+    companera = adaptador.partida.instanciar(criatura("Compañera", 1, 1), j0.id, "Battlefield")
+    companera.entro_este_turno = False
+    adaptador.partida.instanciar(criatura("Muro", 1, 1, keywords=("Flying",)), j1.id, "Battlefield")
     adaptador.fase = "Declarar Atacantes"
     adaptador.ejecutar_accion(j0, {"tipo": "declarar_atacante", "carta_id": guardian.object_id})
+    adaptador.ejecutar_accion(j0, {"tipo": "finalizar_ataques"})
     assert not adaptador.partida.tiene_keyword(guardian, "Flying")
 
 
@@ -1088,6 +1149,8 @@ def test_charmed_sleep_aura_huerfana() -> None:
 def test_flame_lash_puede_dar_a_un_jugador() -> None:
     cartas, adaptador, j0, j1 = _mesa()
     _tierras(adaptador, j0, cartas["Mountain"], 8)
+    ancla = adaptador.partida.instanciar(criatura("Ancla", 1, 1), j0.id, "Battlefield")
+    ancla.entro_este_turno = False
     criatura_rival = adaptador.partida.instanciar(criatura("Rival", 5, 5), j1.id, "Battlefield")
     latigo = adaptador.partida.instanciar(cartas["Flame Lash"], j0.id, "Hand")
     acciones = adaptador._enumerar(j0)
@@ -1290,6 +1353,202 @@ def test_fases_vacias_se_saltan_y_el_descarte_no() -> None:
     assert all(a["tipo"] == "descartar" for a in acciones)
 
 
+def test_instantaneo_en_respuesta_resuelve_antes() -> None:
+    _cartas, adaptador, j0, j1 = _mesa()
+    oso = adaptador.partida.instanciar(criatura("Oso", 2, 2), j0.id, "Battlefield")
+    soldado = adaptador.partida.instanciar(criatura("Soldado", 1, 1), j0.id, "Hand")
+    bomba = _efecto("ModifyPower", _info_criatura(), amount=3, duration="UNTIL_END_OF_TURN")
+    arriba = adaptador.partida.instanciar(_instantaneo("Arriba", [bomba]), j0.id, "Hand")
+    adaptador.partida.instanciar(_instantaneo("Reserva", [dict(bomba)]), j0.id, "Hand")
+    adaptador.partida.instanciar(_instantaneo("Rival", [dict(bomba)]), j1.id, "Hand")
+
+    _jugar(adaptador, j0, soldado.object_id)
+    assert soldado.zona == "Stack"
+    assert adaptador.partida.poder(oso) == 2
+    assert any(a.get("carta_id") == arriba.object_id for a in adaptador.acciones_legales())
+
+    _jugar(adaptador, j0, arriba.object_id)
+    adaptador.ejecutar_accion(j0, _por_id(_menu(adaptador), "elegir_objetivo", oso.object_id))
+    assert soldado.zona == "Stack"
+    assert adaptador.partida.poder(oso) == 2
+    assert adaptador.partida.pila[-1] is arriba
+
+    _pasar(adaptador)
+    assert soldado.zona == "Stack"
+    assert adaptador.partida.poder(oso) == 2
+    _pasar(adaptador)
+    assert adaptador.partida.poder(oso) == 5
+    assert soldado.zona == "Stack"
+
+    _pasar(adaptador)
+    _pasar(adaptador)
+    assert soldado.zona == "Battlefield"
+    assert adaptador.partida.poder(oso) == 5
+
+
+def test_conjuro_tierra_y_equip_solo_en_la_principal() -> None:
+    cartas, adaptador, j0, j1 = _mesa()
+    _tierras(adaptador, j0, cartas["Forest"], 3)
+    oso = adaptador.partida.instanciar(criatura("Oso", 2, 2), j0.id, "Battlefield")
+    tierra = adaptador.partida.instanciar(cartas["Forest"], j0.id, "Hand")
+    lento = adaptador.partida.instanciar(_conjuro("Lento", []), j0.id, "Hand")
+    criatura_lenta = adaptador.partida.instanciar(criatura("Lenta", 1, 1), j0.id, "Hand")
+    rayo = adaptador.partida.instanciar(
+        criatura("Rayo", 1, 1, keywords=("Flash",)), j0.id, "Hand",
+    )
+    instantanea = adaptador.partida.instanciar(
+        _instantaneo("Toque", [_efecto("ModifyPower", _info_criatura(), amount=1, duration="UNTIL_END_OF_TURN")]),
+        j0.id,
+        "Hand",
+    )
+    espada = adaptador.partida.instanciar(cartas["Sword of Vengeance"], j0.id, "Battlefield")
+
+    def ids(acciones: list[dict]) -> set:
+        return {a.get("carta_id") for a in acciones}
+
+    menu = adaptador._enumerar(j0)
+    ofrecidas = ids(menu)
+    assert {tierra.object_id, lento.object_id, criatura_lenta.object_id, rayo.object_id, instantanea.object_id} <= ofrecidas
+    assert any(a["tipo"] == "activar" and a["carta_id"] == espada.object_id for a in menu)
+
+    adaptador.fase = "Inicio del combate"
+    menu = adaptador._enumerar(j0)
+    ofrecidas = ids(menu)
+    assert instantanea.object_id in ofrecidas
+    assert rayo.object_id in ofrecidas
+    assert tierra.object_id not in ofrecidas
+    assert lento.object_id not in ofrecidas
+    assert criatura_lenta.object_id not in ofrecidas
+    assert all(not (a["tipo"] == "activar" and a["carta_id"] == espada.object_id) for a in menu)
+
+    adaptador.fase = "Principal"
+    adaptador.indice_activo = 1
+    adaptador.prioridad_idx = 0
+    menu = adaptador._enumerar(j0)
+    ofrecidas = ids(menu)
+    assert instantanea.object_id in ofrecidas
+    assert rayo.object_id in ofrecidas
+    assert tierra.object_id not in ofrecidas
+    assert lento.object_id not in ofrecidas
+    assert criatura_lenta.object_id not in ofrecidas
+    assert all(not (a["tipo"] == "activar" and a["carta_id"] == espada.object_id) for a in menu)
+    assert oso.zona == "Battlefield"
+    assert j1.id == adaptador.jugadores[1].id
+
+
+def test_crecimiento_entre_bloqueos_y_danio() -> None:
+    cartas, adaptador, j0, j1 = _mesa()
+    _tierras(adaptador, j0, cartas["Forest"], 1)
+    atacante = adaptador.partida.instanciar(criatura("Atacante", 2, 2), j0.id, "Battlefield")
+    bloqueador = adaptador.partida.instanciar(criatura("Muro", 2, 2), j1.id, "Battlefield")
+    atacante.entro_este_turno = False
+    crecimiento = adaptador.partida.instanciar(cartas["Giant Growth"], j0.id, "Hand")
+    adaptador.partida.instanciar(cartas["Forest"], j0.id, "Hand")
+    adaptador.fase = "Declarar Atacantes"
+    adaptador.ejecutar_accion(j0, {"tipo": "declarar_atacante", "carta_id": atacante.object_id})
+    adaptador.ejecutar_accion(j0, {"tipo": "finalizar_ataques"})
+    _pasar(adaptador)
+    assert adaptador.fase == "Declarar Bloqueadores"
+    adaptador.ejecutar_accion(j1, {
+        "tipo": "declarar_bloqueo",
+        "blocker_id": bloqueador.object_id,
+        "attacker_id": atacante.object_id,
+    })
+    adaptador.ejecutar_accion(j1, {"tipo": "resolver_combate"})
+    assert atacante.danio == 0
+    assert bloqueador.danio == 0
+    assert any(a.get("carta_id") == crecimiento.object_id for a in adaptador.acciones_legales())
+    _jugar(adaptador, j0, crecimiento.object_id)
+    adaptador.ejecutar_accion(j0, _por_id(_menu(adaptador), "elegir_objetivo", atacante.object_id))
+    assert bloqueador.zona == "Graveyard"
+    assert bloqueador.danio == 5
+    assert atacante.zona == "Battlefield"
+    assert atacante.danio == 2
+    assert adaptador.partida.poder(atacante) == 5
+
+
+def test_attacks_espera_la_confirmacion_y_se_puede_responder() -> None:
+    cartas, adaptador, j0, j1 = _mesa()
+    byrke = adaptador.partida.instanciar(cartas["Byrke, Long Ear of the Law"], j0.id, "Battlefield")
+    byrke.entro_este_turno = False
+    marcada = adaptador.partida.instanciar(criatura("Marcada", 2, 2), j0.id, "Battlefield")
+    marcada.entro_este_turno = False
+    marcada.contadores["PlusOnePlusOne"] = 1
+    bomba = _efecto("ModifyPower", _info_criatura(), amount=1, duration="UNTIL_END_OF_TURN")
+    propia = adaptador.partida.instanciar(_instantaneo("Propia", [bomba]), j0.id, "Hand")
+    adaptador.partida.instanciar(_instantaneo("Ajena", [dict(bomba)]), j1.id, "Hand")
+    adaptador.fase = "Declarar Atacantes"
+    adaptador.ejecutar_accion(j0, {"tipo": "declarar_atacante", "carta_id": marcada.object_id})
+    assert marcada.contadores["PlusOnePlusOne"] == 1
+    assert adaptador.partida.pila == []
+    adaptador.ejecutar_accion(j0, {"tipo": "finalizar_ataques"})
+    assert marcada.contadores["PlusOnePlusOne"] == 1
+    assert adaptador.partida.pila
+    assert any(a.get("carta_id") == propia.object_id for a in adaptador.acciones_legales())
+    _pasar(adaptador)
+    assert marcada.contadores["PlusOnePlusOne"] == 1
+    _pasar(adaptador)
+    assert marcada.contadores["PlusOnePlusOne"] == 2
+
+
+def test_first_strike_abre_prioridad_antes_del_danio_normal() -> None:
+    _cartas, adaptador, j0, j1 = _mesa()
+    atacante = adaptador.partida.instanciar(
+        criatura("Veloz", 1, 1, keywords=("FirstStrike",)), j0.id, "Battlefield",
+    )
+    bloqueador = adaptador.partida.instanciar(criatura("Muro", 2, 2), j1.id, "Battlefield")
+    atacante.entro_este_turno = False
+    bomba = _efecto("ModifyPower", _info_criatura(), amount=1, duration="UNTIL_END_OF_TURN")
+    instantanea = adaptador.partida.instanciar(_instantaneo("Parar", [bomba]), j0.id, "Hand")
+    adaptador.fase = "Declarar Atacantes"
+    adaptador.ejecutar_accion(j0, {"tipo": "declarar_atacante", "carta_id": atacante.object_id})
+    adaptador.ejecutar_accion(j0, {"tipo": "finalizar_ataques"})
+    _pasar(adaptador)
+    adaptador.ejecutar_accion(j1, {
+        "tipo": "declarar_bloqueo",
+        "blocker_id": bloqueador.object_id,
+        "attacker_id": atacante.object_id,
+    })
+    adaptador.ejecutar_accion(j1, {"tipo": "resolver_combate"})
+    assert atacante.danio == 0
+    assert bloqueador.danio == 0
+    _pasar(adaptador)
+    assert bloqueador.zona == "Battlefield"
+    assert bloqueador.danio == 1
+    assert atacante.zona == "Battlefield"
+    assert atacante.danio == 0
+    assert any(a.get("carta_id") == instantanea.object_id for a in adaptador.acciones_legales())
+    _pasar(adaptador)
+    assert atacante.zona == "Graveyard"
+    assert bloqueador.zona == "Battlefield"
+    assert bloqueador.danio == 1
+
+
+def test_ventana_vacia_avanza_y_la_limpieza_pide_descarte() -> None:
+    cartas, adaptador, j0, _j1 = _mesa()
+    tierra = adaptador.partida.instanciar(cartas["Forest"], j0.id, "Hand")
+    adaptador.fase = "Inicio del combate"
+    acciones = adaptador.acciones_legales()
+    assert adaptador.fase == "Principal"
+    assert adaptador.segunda_principal
+    assert any(a.get("carta_id") == tierra.object_id for a in acciones)
+
+    cartas, adaptador, j0, _j1 = _mesa()
+    for _ in range(8):
+        adaptador.partida.instanciar(cartas["Island"], j0.id, "Hand")
+    adaptador.fase = "Paso final"
+    acciones = adaptador.acciones_legales()
+    assert adaptador.fase == "Descartar"
+    assert len(acciones) == 8
+    assert all(a["tipo"] == "descartar" for a in acciones)
+
+
+def test_bloque_global_de_pasos() -> None:
+    assert "BeginningOfCombat" in PHASES
+    assert "EndOfCombat" in PHASES
+    assert GLOBAL_DIM == 43
+
+
 def main() -> None:
     pruebas = [
         test_add_mana_forest,
@@ -1328,6 +1587,13 @@ def main() -> None:
         test_move_zone_elige_fuera_de_la_biblioteca,
         test_carrot_cake_dispara_el_sacrificio_antes_de_la_vida,
         test_fases_vacias_se_saltan_y_el_descarte_no,
+        test_instantaneo_en_respuesta_resuelve_antes,
+        test_conjuro_tierra_y_equip_solo_en_la_principal,
+        test_crecimiento_entre_bloqueos_y_danio,
+        test_attacks_espera_la_confirmacion_y_se_puede_responder,
+        test_first_strike_abre_prioridad_antes_del_danio_normal,
+        test_ventana_vacia_avanza_y_la_limpieza_pide_descarte,
+        test_bloque_global_de_pasos,
         test_partida_starter_aleatoria,
     ]
     for prueba in pruebas:
