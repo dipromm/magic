@@ -15,6 +15,7 @@ La escena está en mesa/escenas/Mesa.tscn.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import random
 import sys
@@ -167,6 +168,7 @@ class Mesa:
         self.historial: list[dict[str, Any]] = []
         self.eventos: list[dict[str, Any]] = []
         self._pasos = 0
+        self._fichas = _leer_fichas()
         self._lock = threading.Lock()
         self.env = MagicStarterEnv(verbose=False, max_episode_steps=max_steps)
         self._cargar_politica(ckpt, stochastic=stochastic)
@@ -469,7 +471,7 @@ class Mesa:
             "id": oid,
             "nombre": carta.definicion.nombre,
             "boca_abajo": False,
-            "foto": f"{carta.definicion.nombre}.jpg",
+            "foto": self._foto_carta(carta),
             "tipos": list(carta.definicion.card_types),
             "subtipos": list(carta.definicion.subtypes),
             "girada": bool(carta.girada),
@@ -483,6 +485,30 @@ class Mesa:
             "danio": int(carta.danio),
         }
 
+    def _foto_carta(self, carta: Any) -> str:
+        nombre = carta.definicion.nombre
+        directa = f"{nombre}.jpg"
+        if not getattr(carta, "es_ficha", False):
+            return directa
+        if nombre != "Token" and (_CARTAS / directa).is_file():
+            return directa
+        return self._archivo_ficha(carta.definicion) or directa
+
+    def _archivo_ficha(self, definicion: Any) -> str:
+        for ficha in self._fichas:
+            if ficha.get("copia_de_origen") or not ficha.get("archivo"):
+                continue
+            if list(definicion.card_types) != list(ficha.get("card_types") or []):
+                continue
+            if list(definicion.subtypes) != list(ficha.get("subtypes") or []):
+                continue
+            if definicion.power != ficha.get("power"):
+                continue
+            if definicion.toughness != ficha.get("toughness"):
+                continue
+            return str(ficha["archivo"])
+        return ""
+
     def _pila_json(self) -> list[dict[str, Any]]:
         ad = self.env.adaptador
         items = []
@@ -492,7 +518,7 @@ class Mesa:
                 items.append({
                     "id": item.object_id,
                     "nombre": nombre,
-                    "foto": f"{nombre}.jpg",
+                    "foto": self._foto_carta(item),
                     "controlador": self._lado_de_id(item.controlador),
                     "es_habilidad": False,
                 })
@@ -589,6 +615,30 @@ def servir(mesa: Mesa, host: str, port: int) -> None:
         httpd.server_close()
 
 
+def _leer_fichas() -> list[dict[str, Any]]:
+    ruta = _CARTAS / "_fichas.json"
+    if not ruta.is_file():
+        return []
+    try:
+        datos = json.loads(ruta.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return []
+    fichas = datos.get("fichas")
+    return fichas if isinstance(fichas, list) else []
+
+
+def preparar_fichas() -> None:
+    """Descarga, antes de abrir la partida, las fichas que el starter puede crear."""
+    ruta = _RAIZ / "mesa" / "descargar_cartas.py"
+    spec = importlib.util.spec_from_file_location("descargar_cartas_mesa", ruta)
+    if spec is None or spec.loader is None:
+        print("no está mesa/descargar_cartas.py")
+        return
+    modulo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(modulo)
+    modulo.asegurar_fichas()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Mesa localhost del starter para Godot")
     parser.add_argument("--env", choices=("starter",), default="starter")
@@ -602,6 +652,7 @@ def main() -> None:
     args = parser.parse_args()
     if args.env != "starter":
         raise SystemExit("mesa_api solo abre el starter. El puente Forest+Oso no entra en esta vista.")
+    preparar_fichas()
     mesa = Mesa(
         human_seat=args.human_seat,
         ckpt=args.ckpt,

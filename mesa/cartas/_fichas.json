@@ -1,0 +1,41 @@
+{
+  "fichas": [
+    {
+      "power": 1,
+      "toughness": 1,
+      "colors": [
+        "WHITE"
+      ],
+      "card_types": [
+        "Creature"
+      ],
+      "subtypes": [
+        "Rabbit"
+      ],
+      "efecto": "CreateToken",
+      "origenes": [
+        "Carrot Cake",
+        "Hop to It"
+      ],
+      "copia_de_origen": false,
+      "nombre": "Rabbit",
+      "archivo": "Rabbit.jpg",
+      "set": "tblb"
+    },
+    {
+      "power": 1,
+      "toughness": 1,
+      "colors": [],
+      "card_types": [],
+      "subtypes": [],
+      "efecto": "CreateCopyToken",
+      "origenes": [
+        "Coruscation Mage"
+      ],
+      "copia_de_origen": true,
+      "nombre": "",
+      "archivo": "",
+      "set": ""
+    }
+  ]
+}

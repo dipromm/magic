@@ -62,6 +62,9 @@ var _caja_historial: VBoxContainer
 var _visor: Control
 var _visor_titulo: Label
 var _visor_rejilla: GridContainer
+var _preview: PanelContainer
+var _preview_imagen: TextureRect
+var _preview_nombre: Label
 var _camara: Camera3D
 var _marco: Node3D
 
@@ -91,7 +94,7 @@ func _mundo() -> void:
 	add_child(entorno)
 
 	var sol := DirectionalLight3D.new()
-	sol.rotation_degrees = Vector3(-62, -28, 0)
+	sol.rotation_degrees = Vector3(-72, -24, 0)
 	sol.light_color = Color(1.0, 0.9, 0.74)
 	sol.light_energy = 1.45
 	sol.shadow_enabled = true
@@ -116,10 +119,11 @@ func _mundo() -> void:
 	_ovalo()
 
 	_camara = Camera3D.new()
-	_camara.position = Vector3(0, 4.7, -8.5)
-	_camara.fov = 36
+	# Alta y poco retrasada: se mira el tapete desde arriba, no de lado.
+	_camara.position = Vector3(0, 12.4, -4.6)
+	_camara.fov = 42
 	add_child(_camara)
-	_camara.look_at(Vector3(0, 0, 0.15))
+	_camara.look_at(Vector3(0, 0, 0.4), Vector3.UP)
 
 	_marco = Node3D.new()
 	add_child(_marco)
@@ -174,10 +178,10 @@ func _interfaz() -> void:
 	var panel := _estilo_panel()
 	tema.set_stylebox("panel", "PanelContainer", panel)
 	tema.set_color("font_color", "Label", Color(0.94, 0.91, 0.84))
-	tema.set_font_size("font_size", "Label", 18)
+	tema.set_font_size("font_size", "Label", 14)
 	tema.set_color("font_color", "Button", Color(0.95, 0.92, 0.84))
 	tema.set_color("font_hover_color", "Button", Color(1, 0.97, 0.88))
-	tema.set_font_size("font_size", "Button", 16)
+	tema.set_font_size("font_size", "Button", 13)
 	tema.set_stylebox("normal", "Button", _estilo_boton(0.0))
 	tema.set_stylebox("hover", "Button", _estilo_boton(0.45))
 	tema.set_stylebox("pressed", "Button", _estilo_boton(0.75))
@@ -191,43 +195,45 @@ func _interfaz() -> void:
 	capa.add_child(raiz)
 
 	_fase = Label.new()
-	_fase.anchor_left = 0.26
-	_fase.anchor_right = 0.74
-	_fase.anchor_top = 0.012
-	_fase.anchor_bottom = 0.1
+	_fase.anchor_left = 0.28
+	_fase.anchor_right = 0.72
+	_fase.anchor_top = 0.006
+	_fase.anchor_bottom = 0.062
 	_fase.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_fase.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_fase.add_theme_font_size_override("font_size", 28)
+	_fase.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fase.add_theme_font_size_override("font_size", 18)
 	_fase.text = "Conectando con la mesa…"
 	raiz.add_child(_fase)
 
 	_aviso = Label.new()
-	_aviso.anchor_left = 0.26
-	_aviso.anchor_right = 0.74
-	_aviso.anchor_top = 0.095
-	_aviso.anchor_bottom = 0.14
+	_aviso.anchor_left = 0.28
+	_aviso.anchor_right = 0.72
+	_aviso.anchor_top = 0.058
+	_aviso.anchor_bottom = 0.09
 	_aviso.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_aviso.add_theme_font_size_override("font_size", 14)
+	_aviso.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_aviso.add_theme_font_size_override("font_size", 13)
 	_aviso.add_theme_color_override("font_color", Color(0.93, 0.78, 0.45))
 	raiz.add_child(_aviso)
 
-	var tu := _panel_anclado(raiz, 0.012, 0.72, 0.25, 0.98)
-	_vida_tu = _linea(tu, "Tú", 26)
+	var tu := _panel_anclado(raiz, 0.008, 0.82, 0.16, 0.985)
+	_vida_tu = _linea(tu, "Tú", 16)
 	_pips_tu = HBoxContainer.new()
 	tu.add_child(_pips_tu)
-	_mazo_tu = _linea(tu, "", 15)
+	_mazo_tu = _linea(tu, "", 13)
 	_botones_zona(tu, "tu")
 
-	var rival := _panel_anclado(raiz, 0.012, 0.145, 0.25, 0.4)
-	_vida_rival = _linea(rival, "Rival", 26)
+	var rival := _panel_anclado(raiz, 0.008, 0.055, 0.16, 0.2)
+	_vida_rival = _linea(rival, "Rival", 16)
 	_pips_rival = HBoxContainer.new()
 	rival.add_child(_pips_rival)
-	_mazo_rival = _linea(rival, "", 15)
+	_mazo_rival = _linea(rival, "", 13)
 	_botones_zona(rival, "rival")
 
-	var acciones := _panel_anclado(raiz, 0.012, 0.42, 0.25, 0.7)
-	_linea(acciones, "Acciones", 18)
+	var acciones := _panel_anclado(raiz, 0.008, 0.21, 0.16, 0.58)
+	_linea(acciones, "Acciones", 14)
 	var scroll_a := ScrollContainer.new()
 	scroll_a.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	acciones.add_child(scroll_a)
@@ -235,14 +241,43 @@ func _interfaz() -> void:
 	_caja_acciones.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll_a.add_child(_caja_acciones)
 
-	var historia := _panel_anclado(raiz, 0.755, 0.145, 0.988, 0.98)
-	_linea(historia, "Historial", 18)
+	var historia := _panel_anclado(raiz, 0.855, 0.055, 0.992, 0.48)
+	_linea(historia, "Historial", 14)
 	var scroll_h := ScrollContainer.new()
 	scroll_h.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	historia.add_child(scroll_h)
 	_caja_historial = VBoxContainer.new()
 	_caja_historial.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll_h.add_child(_caja_historial)
+
+	_preview = PanelContainer.new()
+	_preview.anchor_left = 1.0
+	_preview.anchor_right = 1.0
+	_preview.anchor_top = 0.08
+	_preview.anchor_bottom = 0.08
+	_preview.offset_left = -620
+	_preview.offset_right = -210
+	_preview.offset_top = 0
+	_preview.offset_bottom = 560
+	_preview.visible = false
+	_preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	raiz.add_child(_preview)
+	var columna_preview := VBoxContainer.new()
+	columna_preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_preview.add_child(columna_preview)
+	_preview_imagen = TextureRect.new()
+	_preview_imagen.custom_minimum_size = Vector2(380, 500)
+	_preview_imagen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_preview_imagen.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_preview_imagen.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_preview_imagen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	columna_preview.add_child(_preview_imagen)
+	_preview_nombre = Label.new()
+	_preview_nombre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_preview_nombre.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_preview_nombre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_preview_nombre.add_theme_font_size_override("font_size", 28)
+	columna_preview.add_child(_preview_nombre)
 
 	_visor = ColorRect.new()
 	_visor.color = Color(0.02, 0.02, 0.025, 0.72)
@@ -316,10 +351,10 @@ func _estilo_panel() -> StyleBoxFlat:
 	estilo.border_color = Color(0.72, 0.64, 0.42, 0.45)
 	estilo.set_border_width_all(1)
 	estilo.set_corner_radius_all(10)
-	estilo.content_margin_left = 12
-	estilo.content_margin_right = 12
-	estilo.content_margin_top = 10
-	estilo.content_margin_bottom = 10
+	estilo.content_margin_left = 8
+	estilo.content_margin_right = 8
+	estilo.content_margin_top = 6
+	estilo.content_margin_bottom = 6
 	return estilo
 
 
@@ -329,10 +364,10 @@ func _estilo_boton(brillo: float) -> StyleBoxFlat:
 	estilo.border_color = Color(0.75, 0.66, 0.4, 0.35 + brillo * 0.5)
 	estilo.set_border_width_all(1)
 	estilo.set_corner_radius_all(6)
-	estilo.content_margin_left = 8
-	estilo.content_margin_right = 8
-	estilo.content_margin_top = 5
-	estilo.content_margin_bottom = 5
+	estilo.content_margin_left = 6
+	estilo.content_margin_right = 6
+	estilo.content_margin_top = 3
+	estilo.content_margin_bottom = 3
 	return estilo
 
 
@@ -426,8 +461,14 @@ func _carta(datos: Dictionary, legales: Dictionary, extra: Dictionary):
 		add_child(nodo)
 	var nombre := str(datos.get("nombre", ""))
 	var textura: Texture2D = null
-	if not bool(datos.get("boca_abajo", false)) and nombre != "":
-		textura = _textura(nombre)
+	if not bool(datos.get("boca_abajo", false)):
+		var archivo := str(datos.get("foto", ""))
+		if archivo.ends_with(".jpg"):
+			archivo = archivo.substr(0, archivo.length() - 4)
+		if archivo == "":
+			archivo = nombre
+		if archivo != "":
+			textura = _textura(archivo)
 	var payload := datos.duplicate()
 	payload["legal"] = legales.has(id)
 	for clave in extra.keys():
@@ -790,11 +831,13 @@ func _llenar_historial(historial: Array) -> void:
 		var linea := Label.new()
 		linea.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		linea.text = "%s — %s" % [entrada.get("jugador", ""), entrada.get("descripcion", "")]
-		linea.add_theme_font_size_override("font_size", 14)
+		linea.add_theme_font_size_override("font_size", 13)
 		_caja_historial.add_child(linea)
 
 
 func _process(delta: float) -> void:
+	if _visor.visible or get_viewport().gui_get_hovered_control() != null:
+		_sobre(null)
 	for dano in _danos:
 		dano["t"] = float(dano["t"]) + delta
 		var nodo: Label3D = dano["nodo"]
@@ -822,13 +865,13 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(evento: InputEvent) -> void:
-	if _visor.visible:
+	if _visor.visible or get_viewport().gui_get_hovered_control() != null:
 		return
 	if evento is InputEventMouseMotion:
 		_sobre(_bajo_el_raton(evento.position))
 	elif evento is InputEventMouseButton and evento.pressed and evento.button_index == MOUSE_BUTTON_LEFT:
 		var carta := _bajo_el_raton(evento.position)
-		if carta != null:
+		if _es_carta(carta) or _es_zona(carta):
 			_pulsar(carta)
 
 
@@ -864,17 +907,46 @@ func _caja_contiene(nodo: Node3D, origen: Vector3, direccion: Vector3) -> float:
 	return -1.0
 
 
-func _sobre(carta: Node3D) -> void:
+func _es_carta(nodo: Node) -> bool:
+	return nodo != null and nodo.get_script() == CartaScript
+
+
+func _es_zona(nodo: Node) -> bool:
+	return nodo != null and nodo.has_meta("zona") and not _es_carta(nodo)
+
+
+func _sobre(nodo: Node) -> void:
+	var carta: Node = nodo if _es_carta(nodo) else null
 	if _hover == carta:
+		_mostrar_preview(carta)
 		return
-	if _hover != null:
+	if _es_carta(_hover):
 		_hover.hover = false
 	_hover = carta
-	if _hover != null:
+	if _es_carta(_hover):
 		_hover.hover = true
+	_mostrar_preview(carta)
+
+
+func _mostrar_preview(carta: Node) -> void:
+	if not _es_carta(carta):
+		_preview.visible = false
+		return
+	_preview.visible = true
+	if bool(carta.boca_abajo):
+		_preview_imagen.texture = _dorso
+		_preview_nombre.visible = false
+		_preview_nombre.text = ""
+		return
+	var cara: Texture2D = carta.textura_cara
+	_preview_imagen.texture = cara
+	_preview_nombre.visible = cara == null
+	_preview_nombre.text = str(carta.nombre_carta)
 
 
 func _pulsar(carta: Node) -> void:
+	if not _es_carta(carta) and not _es_zona(carta):
+		return
 	var zona := ""
 	var quien := ""
 	if carta.has_meta("zona"):
@@ -924,7 +996,7 @@ func _abrir_zona(quien: String, zona: String) -> void:
 		var cara := TextureRect.new()
 		cara.custom_minimum_size = Vector2(120, 168)
 		cara.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		cara.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		cara.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		var textura := _textura(str(datos.get("nombre", "")))
 		cara.texture = textura if textura != null else _dorso
 		var boton := Button.new()

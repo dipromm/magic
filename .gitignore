@@ -58,6 +58,7 @@ pip-wheel-metadata/
 *.json
 !IA_JSON/**/*.json
 !mazos/**/*.json
+!mesa/cartas/_fichas.json
 logs/
 **/logs/
 resultados/

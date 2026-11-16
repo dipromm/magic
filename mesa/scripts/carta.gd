@@ -12,6 +12,8 @@ var legal := false
 var hover := false
 var girada := false
 var boca_abajo := false
+var textura_cara: Texture2D
+var nombre_carta := ""
 var viajando := false
 var velocidad := 9.0
 var espera := 0.0
@@ -30,15 +32,21 @@ var _sombra: MeshInstance3D
 
 
 func _ready() -> void:
-	var caja := BoxMesh.new()
-	caja.size = Vector3(ANCHO, ALTO, 0.02)
 	_malla = MeshInstance3D.new()
-	_malla.mesh = caja
+	_malla.mesh = _cara_completa()
 	_mat_cara = StandardMaterial3D.new()
-	_mat_cara.roughness = 0.62
+	# La foto va entera y legible. La luz cálida queda en el tapete;
+	# un Lambert sobre el plano la dejaba casi negra.
+	_mat_cara.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_mat_cara.albedo_color = Color(0.14, 0.12, 0.1)
+	_mat_cara.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_mat_cara.texture_repeat = false
+	_mat_cara.uv1_scale = Vector3.ONE
+	_mat_cara.uv1_offset = Vector3.ZERO
 	_malla.material_override = _mat_cara
-	_malla.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	# Un plano fino se sombrea a sí mismo y deja la foto negra. La sombra
+	# suave va en el quad de debajo.
+	_malla.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(_malla)
 
 	_marco = _plano(ANCHO + 0.045, ALTO + 0.045, -0.012, Color(0.04, 0.035, 0.03))
@@ -74,6 +82,48 @@ func _ready() -> void:
 	add_child(_sombra)
 
 
+func _cara_completa() -> ArrayMesh:
+	# Plano XY con UV 0–1. BoxMesh de Godot reparte la textura en un atlas
+	# y la cara visible solo enseña una esquina.
+	var hw := ANCHO * 0.5
+	var hh := ALTO * 0.5
+	var vertices := PackedVector3Array([
+		Vector3(-hw, -hh, 0.0),
+		Vector3(hw, -hh, 0.0),
+		Vector3(hw, hh, 0.0),
+		Vector3(-hw, hh, 0.0),
+	])
+	var uvs := PackedVector2Array([
+		Vector2(0, 1),
+		Vector2(1, 1),
+		Vector2(1, 0),
+		Vector2(0, 0),
+	])
+	var normales := PackedVector3Array([
+		Vector3(0, 0, 1),
+		Vector3(0, 0, 1),
+		Vector3(0, 0, 1),
+		Vector3(0, 0, 1),
+	])
+	var tangentes := PackedFloat32Array([
+		1, 0, 0, 1,
+		1, 0, 0, 1,
+		1, 0, 0, 1,
+		1, 0, 0, 1,
+	])
+	var indices := PackedInt32Array([0, 1, 2, 0, 2, 3])
+	var arrays: Array = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_NORMAL] = normales
+	arrays[Mesh.ARRAY_TANGENT] = tangentes
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var malla := ArrayMesh.new()
+	malla.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return malla
+
+
 func _plano(ancho: float, alto: float, z: float, color: Color) -> MeshInstance3D:
 	var malla := MeshInstance3D.new()
 	var caja := BoxMesh.new()
@@ -107,6 +157,8 @@ func aplicar(datos: Dictionary, textura: Texture2D, dorso: Texture2D) -> void:
 	legal = bool(datos.get("legal", false))
 	girada = bool(datos.get("girada", false))
 	boca_abajo = bool(datos.get("boca_abajo", false))
+	nombre_carta = "" if boca_abajo else str(datos.get("nombre", ""))
+	textura_cara = null if boca_abajo else textura
 	var cara: Texture2D = dorso if boca_abajo else textura
 	if cara != null:
 		_mat_cara.albedo_texture = cara
