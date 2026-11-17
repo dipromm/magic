@@ -426,6 +426,61 @@ def _ia_sigue_tras_una_accion_humana() -> None:
     print("ok una acción humana y la IA juega tierra y conjuro antes de devolver la prioridad")
 
 
+def _ia_p1_juega_antes_de_preguntar() -> None:
+    """--human-seat p0: la política es p1, no el asiento 0.
+
+    La primera respuesta que pide algo al humano tiene que llegar después de
+    que el rival haya jugado más que un pase. Con una isla en juego, la
+    montaña deja pagable a Bellowing Crier: tierra, criatura y la elección
+    del descarte, y recién ahí la prioridad vuelve.
+    """
+    mesa = Mesa(human_seat="p0", seed=1, max_steps=200)
+    mesa._elegir_ia = _preferir_jugar.__get__(mesa, Mesa)
+    ad = mesa.env.adaptador
+    _humano, ia = ad.jugadores
+    island = _carta(ad, "Island")
+    mountain = _carta(ad, "Mountain")
+    crier = _carta(ad, "Bellowing Crier")
+    ad.etapa_mulligan = None
+    ad.decision = None
+    ad.fase = "Principal"
+    ad.indice_activo = 1
+    ad.prioridad_idx = 1
+    ad.pases = 0
+    ad.tierras_jugadas = 0
+    ad.segunda_principal = False
+    ad.actor_idx = 1
+    ad.ataques_confirmados = False
+    ad.bloqueos_confirmados = False
+    for zona in ("Hand", "Battlefield"):
+        for oid in list(ia.zonas[zona]):
+            carta = ad.partida.objetos[oid]
+            if carta in (island, mountain, crier):
+                continue
+            _mover(ad, carta, "Exile", ia)
+    _mover(ad, island, "Battlefield", ia)
+    _mover(ad, mountain, "Hand", ia)
+    _mover(ad, crier, "Hand", ia)
+    mesa.env._update_legal_actions()
+    assert mesa.env.agent_selection == "player_1"
+    assert mesa.env.current_legal_actions, "la ventana de p1 no puede abrir vacía"
+    assert any(a.get("tipo") == "jugar_carta" for a in mesa.env.current_legal_actions)
+
+    antes = len(mesa.historial)
+    estado = mesa.estado()
+    nuevos = [h for h in estado["historial"][antes:] if h["asiento"] == "p1"]
+    textos = [h["descripcion"] for h in nuevos]
+    assert nuevos, textos
+    assert any(h["tipo"] != "pasar_fase" for h in nuevos), textos
+    assert any(t.startswith("Jugar tierra:") for t in textos), textos
+    assert any(t.startswith("Jugar") and not t.startswith("Jugar tierra:") for t in textos), textos
+    assert estado["terminada"] or estado["prioridad"] == "tu", estado["prioridad"]
+    assert estado["terminada"] or estado["prioridad_asiento"] == "p0"
+    assert estado["terminada"] or mesa.env.agent_selection == mesa.human
+    assert estado["terminada"] or estado["acciones"], estado
+    print("ok con --human-seat p0 la IA (p1) juega tierra y conjuro antes de preguntar")
+
+
 def _sin_acciones_no_congela() -> None:
     """Una elección sin legales no deja la mesa viva con la prioridad en el rival."""
     mesa = Mesa(human_seat="p1", seed=1, max_steps=30)
@@ -448,6 +503,7 @@ def main() -> None:
     tmp.mkdir(parents=True, exist_ok=True)
     _orden_de_zonas()
     _ia_sigue_tras_una_accion_humana()
+    _ia_p1_juega_antes_de_preguntar()
     _sin_acciones_no_congela()
     _checkpoints(tmp)
     _rechazo_en_el_proceso(tmp)
