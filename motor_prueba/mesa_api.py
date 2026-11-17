@@ -237,11 +237,31 @@ class Mesa:
         return bool(self.env.current_legal_actions)
 
     def _resolver_ia(self) -> None:
+        """Mientras la prioridad sea del rival, elige y ejecuta.
+
+        Una tierra no cierra el turno: el bucle sigue por la pila, el combate
+        y el mulligan hasta que le toque al humano o se acabe la partida.
+        ``env.step`` ya autopasa las ventanas donde solo cabe pasar; si después
+        queda un conjuro, un ataque o una elección, esta función lo juega.
+        """
         while self._en_juego() and self.env.agent_selection != self.human:
             if self._pasos >= self.max_steps:
                 self.env.truncations = {a: True for a in self.env.agents}
                 break
             self._jugar(self._elegir_ia())
+        self._cerrar_si_no_hay_acciones()
+
+    def _cerrar_si_no_hay_acciones(self) -> None:
+        """Sin legales, play_adaptador trunca en el paso. Aquí igual.
+
+        Si se devolviera la partida viva, Godot pinta «Sin acciones» con la
+        prioridad en el rival y no vuelve a preguntar.
+        """
+        if self._acabada() or not self.env.agents or self.env.agent_selection is None:
+            return
+        if self.env.current_legal_actions:
+            return
+        self.env.step(None)
 
     def _elegir_ia(self) -> int:
         agent = self.env.agent_selection

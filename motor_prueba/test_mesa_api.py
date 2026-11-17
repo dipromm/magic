@@ -322,10 +322,133 @@ def _london_en_get_estado() -> None:
             print("".join(lineas[-30:]))
 
 
+def _preferir_jugar(self) -> int:
+    """Conjuro antes que tierra, y tierra antes que pasar. Como un agente que sí juega."""
+    acciones = self.env.current_legal_actions
+
+    def buscar(pred) -> int | None:
+        for i, accion in enumerate(acciones):
+            if pred(accion):
+                return i
+        return None
+
+    conjuro = buscar(
+        lambda a: a.get("tipo") == "jugar_carta"
+        and not str(a.get("descripcion", "")).startswith("Jugar tierra")
+    )
+    if conjuro is not None:
+        return conjuro
+    tierra = buscar(lambda a: a.get("tipo") == "jugar_carta")
+    if tierra is not None:
+        return tierra
+    for tipo in (
+        "quedarme",
+        "poner_fondo",
+        "declarar_atacante",
+        "elegir_bloqueador",
+        "elegir_atacante",
+        "activar",
+        "elegir_objetivo",
+        "elegir_x",
+        "pagar_opcional",
+        "aceptar",
+        "descartar",
+        "finalizar_ataques",
+        "resolver_combate",
+    ):
+        hallado = buscar(lambda a, tipo=tipo: a.get("tipo") == tipo)
+        if hallado is not None:
+            return hallado
+    scry = buscar(lambda a: a.get("tipo") == "elegir_scry" and a.get("destino") == "top")
+    if scry is not None:
+        return scry
+    return 0
+
+
+def _carta(adaptador, nombre: str):
+    for jugador in adaptador.jugadores:
+        for zona in ("Hand", "Library", "Battlefield", "Graveyard", "Exile"):
+            for oid in jugador.zonas[zona]:
+                carta = adaptador.partida.objetos[oid]
+                if carta.definicion.nombre == nombre:
+                    return carta
+    raise AssertionError(f"no está {nombre}")
+
+
+def _mover(adaptador, carta, zona: str, dueno) -> None:
+    adaptador.partida.mover(carta, zona, dueno.id)
+    carta.girada = False
+    carta.atacando = False
+    carta.bloqueando = False
+    carta.entro_este_turno = False
+
+
+def _ia_sigue_tras_una_accion_humana() -> None:
+    """Como Godot: el humano manda una acción y la IA sigue sola.
+
+    Con una llanura en juego, la tierra que juega la IA deja pagable a Warren
+    Elder. Esa ráfaga tiene que incluir la tierra y el conjuro, y devolver la
+    prioridad al humano (o terminar). No vale parar en el rival.
+    """
+    mesa = Mesa(human_seat="p1", seed=1, max_steps=200)
+    mesa._elegir_ia = _preferir_jugar.__get__(mesa, Mesa)
+    estado = mesa.estado()
+    assert estado["fase"] == "Mulligan", estado["fase"]
+    assert estado["prioridad"] == "tu"
+    tipos = {a["tipo"] for a in estado["acciones"]}
+    assert "quedarme" in tipos, tipos
+
+    ad = mesa.env.adaptador
+    ia, humano = ad.jugadores
+    forest = _carta(ad, "Forest")
+    elder = _carta(ad, "Warren Elder")
+    plains = _carta(ad, "Plains")
+    for zona in ("Hand", "Battlefield"):
+        for oid in list(ia.zonas[zona]):
+            carta = ad.partida.objetos[oid]
+            if carta in (forest, elder, plains):
+                continue
+            _mover(ad, carta, "Exile", ia)
+    _mover(ad, plains, "Battlefield", ia)
+    _mover(ad, forest, "Hand", ia)
+    _mover(ad, elder, "Hand", ia)
+    ad.tierras_jugadas = 0
+
+    idx = next(a["indice"] for a in estado["acciones"] if a["tipo"] == "quedarme")
+    antes = len(mesa.historial)
+    estado = mesa.actuar(idx)
+    nuevos = [h for h in estado["historial"][antes:] if h["jugador"] == "Rival"]
+    textos = [h["descripcion"] for h in nuevos]
+    assert any(t.startswith("Jugar tierra:") for t in textos), textos
+    assert any(t.startswith("Jugar") and not t.startswith("Jugar tierra:") for t in textos), textos
+    assert estado["terminada"] or estado["prioridad"] == "tu", estado["prioridad"]
+    assert estado["terminada"] or mesa.env.agent_selection == mesa.human
+    print("ok una acción humana y la IA juega tierra y conjuro antes de devolver la prioridad")
+
+
+def _sin_acciones_no_congela() -> None:
+    """Una elección sin legales no deja la mesa viva con la prioridad en el rival."""
+    mesa = Mesa(human_seat="p1", seed=1, max_steps=30)
+    ad = mesa.env.adaptador
+    ad.etapa_mulligan = None
+    ad.decision = {"tipo": "no_existe"}
+    ad.actor_idx = 0
+    mesa.env._update_legal_actions()
+    assert mesa.env.current_legal_actions == []
+    assert not mesa._acabada()
+    estado = mesa.estado()
+    assert estado["terminada"], estado
+    assert estado["prioridad"] is None
+    assert estado["acciones"] == []
+    print("ok sin acciones la partida termina, no se queda esperando al rival")
+
+
 def main() -> None:
     tmp = Path("/tmp/mesa_api_ckpts")
     tmp.mkdir(parents=True, exist_ok=True)
     _orden_de_zonas()
+    _ia_sigue_tras_una_accion_humana()
+    _sin_acciones_no_congela()
     _checkpoints(tmp)
     _rechazo_en_el_proceso(tmp)
     _london_en_get_estado()
